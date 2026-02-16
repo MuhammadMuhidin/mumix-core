@@ -1,12 +1,12 @@
 "use client";
 
-export default function Error({ error, reset }) {
+export default function Error({ error }) {
   return (
     <div style={{ padding: 40 }}>
       <h2>Something went wrong</h2>
-      <button onClick={() => reset()}>
-        Try again
-      </button>
+      <p style={{ color: "#6b7280" }}>
+        {error.message}
+      </p>
     </div>
   );
 }

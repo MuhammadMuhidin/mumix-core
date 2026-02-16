@@ -10,6 +10,7 @@ export async function createUser(formData) {
     name: formData.get("name"),
     email: formData.get("email"),
     phone: formData.get("phone"),
+    password: formData.get("password"),
     is_active: formData.get("is_active") === "on"
   };
 
@@ -28,6 +29,7 @@ export async function updateUser(id, formData) {
     name: formData.get("name"),
     email: formData.get("email"),
     phone: formData.get("phone"),
+    password: formData.get("password"),
     is_active: formData.get("is_active") === "on"
   };
 

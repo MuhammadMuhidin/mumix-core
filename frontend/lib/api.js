@@ -6,9 +6,11 @@ export async function fetchAPI(path, options = {}) {
     ...options
   });
 
-  if (!res.ok) {
-    throw new Error("API Error");
-  }
-
-  return res.json();
+const data = await res.json();
+try {
+  if (res.ok) return data;
+  throw new Error(data.message);
+} catch (err) {
+  throw new Error(err.message);
+}
 }

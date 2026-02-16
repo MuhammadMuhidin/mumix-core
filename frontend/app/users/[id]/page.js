@@ -74,6 +74,7 @@ return (
         <input
           name="name"
           defaultValue={user.name}
+          readOnly
           required
           placeholder="Full Name"
           style={inputStyle}
@@ -91,6 +92,14 @@ return (
           name="phone"
           defaultValue={user.phone}
           placeholder="Phone Number"
+          style={inputStyle}
+        />
+
+        <input
+          name="password"
+          defaultValue={user.password}
+          type="password"
+          placeholder="Password"
           style={inputStyle}
         />
 

@@ -43,6 +43,15 @@ const primaryButton = {
       <input
         name="phone"
         placeholder="Phone Number"
+        required
+        style={inputStyle}
+      />
+
+      <input
+        name="password"
+        placeholder="Password"
+        type="password"
+        required
         style={inputStyle}
       />
 
