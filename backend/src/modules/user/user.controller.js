@@ -3,6 +3,24 @@ const { success, error } = require("../../core/app.response");
 const AppError = require("../../core/app.error");
 const { getPagination } = require("../../core/app.pagination");
 
+/**
+ * USER CONTROLLER
+ *
+ * Scope:
+ * - Mengambil data dari req (params, query, body).
+ * - Memanggil service.
+ * - Mengirim response ke client.
+ * - Meneruskan error ke middleware global.
+ *
+ * Tidak boleh:
+ * - Mengandung query database.
+ * - Mengandung logika bisnis kompleks.
+ * - Menentukan aturan domain.
+ *
+ * Role:
+ * Adapter antara HTTP layer dan Business layer.
+ */
+
 exports.findAll = async (req, res, next) => {
   try
   {
@@ -67,4 +85,5 @@ try
   {
     next(err);
   }
+
 };
