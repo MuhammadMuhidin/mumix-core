@@ -8,7 +8,7 @@ export async function fetchAPI(path, options = {}) {
 
 const data = await res.json();
 try {
-  if (res.ok) return data;
+  if (res.ok) return data.data;
   throw new Error(data.message);
 } catch (err) {
   throw new Error(err.message);
