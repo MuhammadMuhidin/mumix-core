@@ -1,5 +1,21 @@
 const pool = require("../config/db");
 
+/**
+ * BASE REPOSITORY
+ *
+ * Scope:
+ * - Menyediakan operasi dasar CRUD generik.
+ * - Digunakan sebagai parent class atau reusable data access layer.
+ *
+ * Tidak boleh:
+ * - Mengandung logika bisnis.
+ * - Menentukan aturan domain.
+ * - Berhubungan dengan HTTP.
+ *
+ * Role:
+ * Fondasi akses database untuk module-specific repository.
+ */
+
 class BaseRepository {
   constructor(table, allowedFields) {
     this.table = table;
@@ -81,5 +97,6 @@ class BaseRepository {
     );
   }
 }
+
 
 module.exports = BaseRepository;
