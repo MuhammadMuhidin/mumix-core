@@ -2,8 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+async function getAuthHeaders() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    throw new Error("Unauthorized");
+  }
+
+  return {
+    "Content-Type": "application/json",
+    Cookie: `token=${token}`
+  };
+}
 
 export async function createUser(formData) {
   const payload = {
@@ -16,7 +31,7 @@ export async function createUser(formData) {
 
   await fetch(`${API}/api/users`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await getAuthHeaders(),
     body: JSON.stringify(payload)
   });
 
@@ -35,7 +50,7 @@ export async function updateUser(id, formData) {
 
   await fetch(`${API}/api/users/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: await getAuthHeaders(),
     body: JSON.stringify(payload)
   });
 
@@ -45,7 +60,8 @@ export async function updateUser(id, formData) {
 
 export async function deleteUser(id) {
   await fetch(`${API}/api/users/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
+    headers: await getAuthHeaders()
   });
 
   revalidatePath("/");

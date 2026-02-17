@@ -2,10 +2,25 @@ import DeleteButton from "../../../components/DeleteButton";
 import { updateUser, deleteUser } from "../../actions";
 import { notFound } from "next/navigation";
 import { fetchAPI } from "../../../lib/api";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 async function getUser(id) {
-  return await fetchAPI(`/api/users/${id}`, { cache: "no-store" });
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    redirect("/login");
+  }
+
+  return await fetchAPI(`/api/users/${id}`, {
+    cache: "no-store",
+    headers: {
+      Cookie: `token=${token}`,
+    },
+  });
 }
+
 
 export default async function Page({ params }) {
   const resolvedParams = await params;

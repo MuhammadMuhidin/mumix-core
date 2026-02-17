@@ -2,9 +2,22 @@ import UserForm from "../components/UserForm";
 import UserList from "../components/UserList";
 import { createUser } from "./actions";
 import { fetchAPI } from "../lib/api";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 async function getUsers() {
-  return await fetchAPI("/api/users");
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) {
+    redirect("/login");
+  }
+
+  return await fetchAPI("/api/users", {
+    headers: {
+      Cookie: `token=${token}`
+    }
+  });
 }
 
 export default async function Page() {
