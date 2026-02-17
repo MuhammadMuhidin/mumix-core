@@ -1,5 +1,3 @@
-const joi = require("joi");
-
 /**
  * USER VALIDATOR
  *
@@ -16,6 +14,8 @@ const joi = require("joi");
  * Role:
  * Menjaga agar data yang masuk ke sistem sudah valid secara format.
  */
+
+const joi = require("joi");
 
 exports.create = joi.object({
     name: joi.string().required(),

@@ -1,8 +1,3 @@
-const BaseRepository = require("../../core/base.repository");
-
-const table = "users";
-const allowFields = ["name", "email", "phone", "password", "is_active"];
-
 /**
  * USER REPOSITORY
  *
@@ -19,6 +14,11 @@ const allowFields = ["name", "email", "phone", "password", "is_active"];
  * Role:
  * Data access layer (akses penyimpanan data).
  */
+
+const BaseRepository = require("../../core/base.repository");
+
+const table = "users";
+const allowFields = ["name", "email", "phone", "password", "is_active"];
 
 class UserRepository extends BaseRepository {
     constructor() {

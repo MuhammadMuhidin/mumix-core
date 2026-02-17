@@ -1,9 +1,3 @@
-const express = require("express");
-const router = express.Router();
-const ctrl = require("./user.controller");
-const { validate } = require("../../middlewares/validate.middleware");
-const validator = require("./user.validator");
-
 /**
  * USER ROUTE
  *
@@ -20,6 +14,12 @@ const validator = require("./user.validator");
  * Role:
  * Route hanya bertugas sebagai wiring layer (penghubung).
  */
+
+const express = require("express");
+const router = express.Router();
+const ctrl = require("./user.controller");
+const { validate } = require("../../middlewares/validate.middleware");
+const validator = require("./user.validator");
 
 router.get("/", ctrl.findAll);
 router.get("/:id", ctrl.findById);

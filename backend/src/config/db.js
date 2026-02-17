@@ -1,5 +1,3 @@
-const { Pool } = require("pg");
-
 /**
  * DATABASE CONFIGURATION
  *
@@ -15,6 +13,8 @@ const { Pool } = require("pg");
  * Role:
  * Infrastructure layer untuk koneksi database.
  */
+
+const { Pool } = require("pg");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

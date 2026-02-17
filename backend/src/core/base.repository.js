@@ -1,5 +1,3 @@
-const pool = require("../config/db");
-
 /**
  * BASE REPOSITORY
  *
@@ -15,6 +13,8 @@ const pool = require("../config/db");
  * Role:
  * Fondasi akses database untuk module-specific repository.
  */
+
+const pool = require("../config/db");
 
 class BaseRepository {
   constructor(table, allowedFields) {
@@ -39,6 +39,14 @@ class BaseRepository {
     const { rows } = await pool.query(
       `SELECT * FROM ${this.table} WHERE id = $1`,
       [id]
+    );
+    return rows[0] || null;
+  }
+
+  async findByEmail(email) {
+    const { rows } = await pool.query(
+      `SELECT * FROM ${this.table} WHERE email = $1`,
+      [email]
     );
     return rows[0] || null;
   }

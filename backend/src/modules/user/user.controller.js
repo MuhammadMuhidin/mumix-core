@@ -1,8 +1,3 @@
-const service = require("./user.service");
-const { success, error } = require("../../core/app.response");
-const AppError = require("../../core/app.error");
-const { getPagination } = require("../../core/app.pagination");
-
 /**
  * USER CONTROLLER
  *
@@ -20,6 +15,11 @@ const { getPagination } = require("../../core/app.pagination");
  * Role:
  * Adapter antara HTTP layer dan Business layer.
  */
+
+const service = require("./user.service");
+const { success, error } = require("../../core/app.response");
+const AppError = require("../../core/app.error");
+const { getPagination } = require("../../core/app.pagination");
 
 exports.findAll = async (req, res, next) => {
   try

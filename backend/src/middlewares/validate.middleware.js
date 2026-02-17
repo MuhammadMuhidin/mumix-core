@@ -1,5 +1,3 @@
-const AppError = require("../core/app.error");
-
 /**
  * VALIDATE MIDDLEWARE
  *
@@ -15,6 +13,8 @@ const AppError = require("../core/app.error");
  * Role:
  * Menjaga integritas format data sebelum masuk ke sistem.
  */
+
+const AppError = require("../core/app.error");
 
 exports.validate = (validator) => async (req, res, next) => {
     try {

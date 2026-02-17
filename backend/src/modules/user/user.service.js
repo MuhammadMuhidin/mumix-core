@@ -1,5 +1,3 @@
-const repo = require("./user.repository");
-
 /**
  * USER SERVICE
  *
@@ -17,8 +15,21 @@ const repo = require("./user.repository");
  * Pusat keputusan dan aturan sistem.
  */
 
+const repo = require("./user.repository");
+const AppError = require("../../core/app.error");
+const bcrypt = require("bcrypt");
+
 exports.findAll = async () => repo.findAll();
 exports.findById = async (id) => repo.findById(id);
-exports.create = async (data) => repo.create(data);
+
+exports.create = async (data) => {
+    if (await repo.findByEmail(data.email)) {
+        throw new AppError("Email already exists", 400);
+    }
+
+    data.password = await bcrypt.hash(data.password, 10);
+    return repo.create(data);
+}
+
 exports.update = async (id, data) => repo.update(id, data);
 exports.remove = async (id) => repo.remove(id);
