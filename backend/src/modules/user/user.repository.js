@@ -18,7 +18,7 @@
 const BaseRepository = require("../../core/base.repository");
 
 const table = "users";
-const allowFields = ["name", "email", "phone", "password", "is_active", "token_version" ];
+const allowFields = ["name", "email", "phone", "password", "is_active", "token_version", "role" ];
 
 class UserRepository extends BaseRepository {
     constructor() {

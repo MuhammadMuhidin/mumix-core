@@ -8,18 +8,15 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined");
 }
 
-exports.verifyToken = async (req, res, next) => {
+exports.authenticate = async (req, res, next) => {
   try {
     const token = req.cookies?.token;
-
     if (!token) {
       throw new AppError("Authentication required", 401);
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-
     const user = await userRepo.findById(decoded.id);
-
     if (!user) {
       throw new AppError("User not found", 401);
     }
@@ -34,7 +31,12 @@ exports.verifyToken = async (req, res, next) => {
       throw new AppError("Account disabled", 403);
     }
 
-    req.user = decoded;
+    req.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    };
 
     next();
   } catch (err) {

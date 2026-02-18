@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const userRoutes = require("./modules/user/user.route");
 const authRoutes = require("./modules/auth/auth.route");
-const { errorHandler } = require("./middlewares/error.middleware");
+const { errorHandler } = require("./middlewares/error");
 
 const app = express();
 
@@ -12,7 +12,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use(errorHandler);
 
 module.exports = app;

@@ -21,15 +21,31 @@ async function getUser(id) {
   });
 }
 
+async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) redirect("/login");
+
+  return await fetchAPI("/api/auth/me", {
+    headers: {
+      Cookie: `token=${token}`,
+    },
+  });
+}
 
 export default async function Page({ params }) {
   const resolvedParams = await params;
-
   const id = resolvedParams?.id;
   if (!id) notFound();
 
   const user = await getUser(id);
   if (!user) notFound();
+
+  const currentUser = await getCurrentUser();
+  if (currentUser.user.role !== "admin") {
+    redirect("/");
+  }
 
   const inputStyle = {
   padding: "12px 14px",
@@ -109,6 +125,15 @@ return (
           placeholder="Phone Number"
           style={inputStyle}
         />
+
+        <select
+          name="role"
+          defaultValue={user.role}
+          style={inputStyle}
+        >
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
 
         <input
           name="password"

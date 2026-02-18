@@ -55,6 +55,11 @@ const primaryButton = {
         style={inputStyle}
       />
 
+      <select name="role" defaultValue="user" style={inputStyle}>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+
       <label
         style={{
           display: "flex",

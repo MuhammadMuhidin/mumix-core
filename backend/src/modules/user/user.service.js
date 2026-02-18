@@ -42,7 +42,7 @@ exports.update = async (id, data) => {
   // 🔐 Jika password diisi dan tidak kosong → hash + invalidate session
   if (data.password && data.password.trim() !== "") {
     updateData.password = await bcrypt.hash(data.password, 10);
-    updateData.token_version = existingUser.token_version + 1;
+    updateData.token_version = Number(existingUser.token_version) + 1;
   } else {
     delete updateData.password; // jangan overwrite password lama
   }
@@ -52,7 +52,7 @@ exports.update = async (id, data) => {
     typeof data.is_active !== "undefined" &&
     data.is_active !== existingUser.is_active
   ) {
-    updateData.token_version = existingUser.token_version + 1;
+    updateData.token_version = Number(existingUser.token_version) + 1;
   }
 
   return repo.update(id, updateData);

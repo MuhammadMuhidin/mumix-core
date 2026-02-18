@@ -20,8 +20,26 @@ async function getUsers() {
   });
 }
 
+async function getCurrentUser() {
+  const cookieStore = await cookies();
+
+  const token = cookieStore.get("token")?.value;
+  if (!token) redirect("/login");
+
+  return await fetchAPI("/api/auth/me", {
+    headers: {
+      Cookie: `token=${token}`
+    }
+  });
+}
+
 export default async function Page() {
+  const currentUser = await getCurrentUser();
   const users = await getUsers();
+
+  if (currentUser.user.role !== "admin") {
+    redirect("/");
+  }
 
   return (
   <div
@@ -36,6 +54,7 @@ export default async function Page() {
     <div style={{ width: 900 }}>
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ margin: 0 }}>User Management</h1>
+        <h2>Welcome, {currentUser.user.name}! you have {currentUser.user.role === "admin" ? "Administrator" : "User"} access 🔐</h2>
         <p style={{ color: "#6b7280", marginTop: 8 }}>
           Create, update, and manage system users
         </p>

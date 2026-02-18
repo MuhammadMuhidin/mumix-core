@@ -19,13 +19,16 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("./user.controller");
 const validator = require("./user.validator");
-const { validate } = require("../../middlewares/validate.middleware");
-const { verifyToken } = require("../../middlewares/auth.middleware");
+const { validate } = require("../../middlewares/validation");
+const { authenticate } = require("../../middlewares/authentication");
+const { authorize } = require("../../middlewares/authorization");
 
-router.get("/", verifyToken ,ctrl.findAll);
-router.get("/:id", verifyToken,ctrl.findById);
-router.post("/", verifyToken,validate(validator.create), ctrl.create);
-router.put("/:id", verifyToken, ctrl.update);
-router.delete("/:id", verifyToken, ctrl.remove);
+router.use(authenticate, authorize("admin"));
+
+router.get("/", ctrl.findAll);
+router.get("/:id", ctrl.findById);
+router.post("/", validate(validator.create), ctrl.create);
+router.put("/:id", validate(validator.update), ctrl.update);
+router.delete("/:id", ctrl.remove);
 
 module.exports = router;
