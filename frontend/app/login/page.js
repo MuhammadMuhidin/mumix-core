@@ -92,9 +92,9 @@ return (
       </form>
 
       {error && (
-        <div className="mt-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+        <p style={{ color: "red", marginTop: "8px" }}>
           {error}
-        </div>
+        </p>
       )}
     </div>
   </div>

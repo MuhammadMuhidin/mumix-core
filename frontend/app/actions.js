@@ -9,11 +9,9 @@ const API = process.env.NEXT_PUBLIC_API_URL;
 async function getAuthHeaders() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-
   if (!token) {
     throw new Error("Unauthorized");
   }
-
   return {
     "Content-Type": "application/json",
     Cookie: `token=${token}`
@@ -21,39 +19,23 @@ async function getAuthHeaders() {
 }
 
 export async function createUser(formData) {
-  const payload = {
-    name: formData.get("name"),
-    email: formData.get("email"),
-    phone: formData.get("phone"),
-    password: formData.get("password"),
-    is_active: formData.get("is_active") === "on"
-  };
-
+  const payload = Object.fromEntries(formData);
   await fetch(`${API}/api/users`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify(payload)
   });
-
   revalidatePath("/");
   redirect("/");
 }
 
 export async function updateUser(id, formData) {
-  const payload = {
-    name: formData.get("name"),
-    email: formData.get("email"),
-    phone: formData.get("phone"),
-    password: formData.get("password"),
-    is_active: formData.get("is_active") === "on"
-  };
-
+  const payload = Object.fromEntries(formData);
   await fetch(`${API}/api/users/${id}`, {
     method: "PUT",
     headers: await getAuthHeaders(),
     body: JSON.stringify(payload)
   });
-
   revalidatePath("/");
   redirect("/");
 }
@@ -63,7 +45,6 @@ export async function deleteUser(id) {
     method: "DELETE",
     headers: await getAuthHeaders()
   });
-
   revalidatePath("/");
   redirect("/");
 }

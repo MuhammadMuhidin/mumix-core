@@ -31,7 +31,7 @@ exports.verifyToken = async (req, res, next) => {
 
     // 🔒 Account status check
     if (!user.is_active) {
-      throw new AppError("Account disabled", 401);
+      throw new AppError("Account disabled", 403);
     }
 
     req.user = decoded;

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API) {
@@ -15,18 +17,23 @@ export async function fetchAPI(path, options = {}) {
     ...options
   });
 
-  const text = await res.text();
-
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error("Server returned non-JSON response");
+  if (res.status === 401) {
+    redirect("/login");
   }
 
+  if (res.status === 403) {
+    throw new Error(data.message || "Account disabled");
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Response is not valid JSON.");
+  }
+
+  const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || "Something went wrong");
   }
 
-  return data.data;
+  return data.data
 }

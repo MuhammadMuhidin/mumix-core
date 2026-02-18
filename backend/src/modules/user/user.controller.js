@@ -17,15 +17,13 @@
  */
 
 const service = require("./user.service");
-const { success, error } = require("../../core/app.response");
+const { success } = require("../../core/app.response");
 const AppError = require("../../core/app.error");
-const { getPagination } = require("../../core/app.pagination");
 
 exports.findAll = async (req, res, next) => {
   try
   {
-    const { page, limit, offset } = getPagination(req);
-    const users = await service.findAll(page, limit, offset);
+    const users = await service.findAll();
     success(res, users);
   }
   catch(err)
@@ -55,7 +53,7 @@ exports.create = async (req, res, next) => {
  try
   {
     const user = await service.create(req.body);
-    res.status(201).json(user);
+    success(res, user);
   }
   catch(err)
   {
@@ -66,7 +64,8 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
 try 
   {
-    const user = await service.update(req.params.id, req.body);
+    const id = Number(req.params.id);
+    const user = await service.update(id, req.body);
     success(res, user);
   }
   catch(err)
@@ -78,7 +77,8 @@ try
 exports.remove = async (req, res, next) => {
 try 
   {
-    const user = await service.remove(req.params.id);
+    const id = Number(req.params.id);
+    const user = await service.remove(id);
     success(res, user);
   }
   catch(err)
