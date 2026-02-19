@@ -17,23 +17,23 @@ export async function fetchAPI(path, options = {}) {
     ...options
   });
 
+  const contentType = res.headers.get("content-type") || "";
   if (res.status === 401) {
     redirect("/login");
   }
 
+  const data = await res.json();
   if (res.status === 403) {
     throw new Error(data.message || "Account disabled");
   }
 
-  const contentType = res.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
     throw new Error("Response is not valid JSON.");
   }
 
-  const data = await res.json();
   if (!res.ok) {
     throw new Error(data.message || "Something went wrong");
   }
 
-  return data.data
+  return data;
 }

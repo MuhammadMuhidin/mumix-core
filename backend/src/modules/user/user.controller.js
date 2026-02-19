@@ -1,21 +1,3 @@
-/**
- * USER CONTROLLER
- *
- * Scope:
- * - Mengambil data dari req (params, query, body).
- * - Memanggil service.
- * - Mengirim response ke client.
- * - Meneruskan error ke middleware global.
- *
- * Tidak boleh:
- * - Mengandung query database.
- * - Mengandung logika bisnis kompleks.
- * - Menentukan aturan domain.
- *
- * Role:
- * Adapter antara HTTP layer dan Business layer.
- */
-
 const service = require("./user.service");
 const { success } = require("../../core/app.response");
 const AppError = require("../../core/app.error");
@@ -23,8 +5,8 @@ const AppError = require("../../core/app.error");
 exports.findAll = async (req, res, next) => {
   try
   {
-    const users = await service.findAll();
-    success(res, users);
+    const users = await service.findAll(req.query);
+    success(res, users.data, users.meta);
   }
   catch(err)
   {

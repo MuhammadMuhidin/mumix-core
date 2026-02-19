@@ -1,45 +1,71 @@
 import UserForm from "../components/UserForm";
 import UserList from "../components/UserList";
+import Pagination from "../components/Pagination";
 import { createUser } from "./actions";
 import { fetchAPI } from "../lib/api";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-async function getUsers() {
+async function getUsers({ page, limit, search, sortBy, sortOrder }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
-  if (!token) {
-    redirect("/login");
-  }
+  if (!token) redirect("/login");
 
-  return await fetchAPI("/api/users", {
-    headers: {
-      Cookie: `token=${token}`
-    }
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    search: search || "",
+    sortBy: sortBy || "id",
+    sortOrder: sortOrder || "asc",
   });
+
+  console.log("REQUEST PAGE:", page);
+
+  return await fetchAPI(`/api/users?${params.toString()}`, {
+    headers: {
+      Cookie: `token=${token}`,
+    },
+  });
+  
 }
 
 async function getCurrentUser() {
   const cookieStore = await cookies();
-
   const token = cookieStore.get("token")?.value;
+
   if (!token) redirect("/login");
 
   return await fetchAPI("/api/auth/me", {
     headers: {
-      Cookie: `token=${token}`
-    }
+      Cookie: `token=${token}`,
+    },
   });
 }
 
-export default async function Page() {
-  const currentUser = await getCurrentUser();
-  const users = await getUsers();
+export default async function Page({ searchParams: searchParamsPromise }) {
+  const searchParams = await searchParamsPromise;
+  const rawPage = searchParams?.page;
+  const page = Number(rawPage ?? 1);
+  const limit = Number(searchParams?.limit) || 5;
+  const search = searchParams?.search || "";
+  const sortBy = searchParams?.sortBy || "id";
+  const sortOrder = searchParams?.sortOrder || "asc";
 
-  if (currentUser.user.role !== "admin") {
+  const currentUser = await getCurrentUser();
+
+  if (currentUser.data.user.role !== "admin") {
     redirect("/");
   }
+
+  const usersResult = await getUsers({ page, limit, search, sortBy, sortOrder });
+
+  const users = usersResult?.data ?? [];
+  const meta = usersResult?.meta;
+
+  console.log("SEARCH PARAMS:", searchParams);
+  console.log("PAGE PARSED:", page);
+  console.log("META FROM BE:", usersResult?.meta);
 
   return (
   <div
@@ -54,7 +80,7 @@ export default async function Page() {
     <div style={{ width: 900 }}>
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ margin: 0 }}>User Management</h1>
-        <h2>Welcome, {currentUser.user.name}! you have {currentUser.user.role === "admin" ? "Administrator" : "User"} access 🔐</h2>
+        <h2>Welcome, {currentUser.data.user.name}! you have {currentUser.data.user.role === "admin" ? "Administrator" : "User"} access 🔐</h2>
         <p style={{ color: "#6b7280", marginTop: 8 }}>
           Create, update, and manage system users
         </p>
@@ -83,6 +109,7 @@ export default async function Page() {
       >
         <h3 style={{ marginBottom: 16 }}>User List</h3>
         <UserList users={users} />
+        <Pagination meta={meta} searchParams={searchParams} />
       </div>
     </div>
   </div>

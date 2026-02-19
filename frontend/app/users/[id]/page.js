@@ -39,11 +39,12 @@ export default async function Page({ params }) {
   const id = resolvedParams?.id;
   if (!id) notFound();
 
-  const user = await getUser(id);
+  const userResult = await getUser(id);
+  const user = userResult.data??[];
   if (!user) notFound();
 
   const currentUser = await getCurrentUser();
-  if (currentUser.user.role !== "admin") {
+  if (currentUser.data.user.role !== "admin") {
     redirect("/");
   }
 

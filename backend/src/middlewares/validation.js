@@ -1,19 +1,3 @@
-/**
- * VALIDATE MIDDLEWARE
- *
- * Scope:
- * - Menjalankan validasi schema (Joi).
- * - Menghentikan request jika format input tidak valid.
- * - Meneruskan request ke controller jika valid.
- *
- * Tidak boleh:
- * - Mengecek kondisi database.
- * - Mengandung aturan bisnis.
- *
- * Role:
- * Menjaga integritas format data sebelum masuk ke sistem.
- */
-
 const AppError = require("../core/app.error");
 
 exports.validate = (validator) => async (req, res, next) => {
