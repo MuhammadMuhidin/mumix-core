@@ -18,24 +18,39 @@ async function getAuthHeaders() {
   };
 }
 
-export async function createUser(formData) {
+function normalizePayload(formData) {
   const payload = Object.fromEntries(formData);
+
+  // 🔥 FIX: paksa boolean murni
+  if ("status" in payload) {
+    payload.status = payload.status === "true";
+  }
+
+  return payload;
+}
+
+export async function createUser(formData) {
+  const payload = normalizePayload(formData);
+
   await fetch(`${API}/api/users`, {
     method: "POST",
     headers: await getAuthHeaders(),
     body: JSON.stringify(payload)
   });
+
   revalidatePath("/");
   redirect("/");
 }
 
 export async function updateUser(id, formData) {
-  const payload = Object.fromEntries(formData);
+  const payload = normalizePayload(formData);
+
   await fetch(`${API}/api/users/${id}`, {
     method: "PUT",
     headers: await getAuthHeaders(),
     body: JSON.stringify(payload)
   });
+
   revalidatePath("/");
   redirect("/");
 }
@@ -45,6 +60,13 @@ export async function deleteUser(id) {
     method: "DELETE",
     headers: await getAuthHeaders()
   });
+
   revalidatePath("/");
   redirect("/");
+}
+
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete("token");
+  redirect("/login");
 }

@@ -144,21 +144,23 @@ return (
           style={inputStyle}
         />
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 14,
-          }}
-        >
-          <input
-            type="checkbox"
-            name="is_active"
-            defaultChecked={Boolean(user.is_active)}
-          />
-          Active
-        </label>
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 14,
+        }}
+      >
+        <input type="hidden" name="is_active" value="false" />
+        <input
+          type="checkbox"
+          name="is_active"
+          value="true"
+          defaultChecked={Boolean(user.is_active)}
+        />
+        Active
+      </label>
 
         <button type="submit" style={primaryButton}>
           Update User

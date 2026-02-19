@@ -1,21 +1,21 @@
 export default function UserForm({ action }) {
-const inputStyle = {
-  padding: "12px 14px",
-  borderRadius: 10,
-  border: "1px solid #d1d5db",
-  fontSize: 14,
-  outline: "none",
-};
+  const inputStyle = {
+    padding: "12px 14px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    fontSize: 14,
+    outline: "none",
+  };
 
-const primaryButton = {
-  padding: "12px",
-  borderRadius: 10,
-  border: "none",
-  background: "#16a34a",
-  color: "#fff",
-  fontWeight: 600,
-  cursor: "pointer",
-};
+  const primaryButton = {
+    padding: "12px",
+    borderRadius: 10,
+    border: "none",
+    background: "#16a34a",
+    color: "#fff",
+    fontWeight: 600,
+    cursor: "pointer",
+  };
 
   return (
     <form
@@ -68,7 +68,13 @@ const primaryButton = {
           fontSize: 14,
         }}
       >
-        <input type="checkbox" name="is_active" defaultChecked />
+        <input type="hidden" name="is_active" value="false" />
+        <input
+          type="checkbox"
+          name="is_active"
+          value="true"
+          defaultChecked
+        />
         Active
       </label>
 

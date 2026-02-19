@@ -2,7 +2,7 @@ import UserForm from "../components/UserForm";
 import UserList from "../components/UserList";
 import Pagination from "../components/Pagination";
 import SearchInput from "../components/SearchInput";  
-import { createUser } from "./actions";
+import { createUser, logout } from "./actions";
 import { fetchAPI } from "../lib/api";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -73,12 +73,44 @@ export default async function Page({ searchParams: searchParamsPromise }) {
     }}
   >
     <div style={{ width: 900 }}>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ margin: 0 }}>User Management</h1>
-        <h2>Welcome, {currentUser.data.user.name}! you have {currentUser.data.user.role === "admin" ? "Administrator" : "User"} access 🔐</h2>
-        <p style={{ color: "#6b7280", marginTop: 8 }}>
-          Create, update, and manage system users
-        </p>
+
+      <div
+        style={{
+          marginBottom: 32,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <h1 style={{ margin: 0 }}>User Management</h1>
+          <h2>
+            Welcome, {currentUser.data.user.name}! you have{" "}
+            {currentUser.data.user.role === "admin"
+              ? "Administrator"
+              : "User"}{" "}
+            access 🔐
+          </h2>
+          <p style={{ color: "#6b7280", marginTop: 8 }}>
+            Create, update, and manage system users
+          </p>
+        </div>
+
+        <form action={logout}>
+          <button
+            type="submit"
+            style={{
+              padding: "8px 16px",
+              background: "#ef4444",
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+            }}
+          >
+            Logout
+          </button>
+        </form>
       </div>
 
       <div
