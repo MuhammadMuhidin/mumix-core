@@ -1,6 +1,7 @@
 import UserForm from "../components/UserForm";
 import UserList from "../components/UserList";
 import Pagination from "../components/Pagination";
+import SearchInput from "../components/SearchInput";  
 import { createUser } from "./actions";
 import { fetchAPI } from "../lib/api";
 import { cookies } from "next/headers";
@@ -19,8 +20,6 @@ async function getUsers({ page, limit, search, sortBy, sortOrder }) {
     sortBy: sortBy || "id",
     sortOrder: sortOrder || "asc",
   });
-
-  console.log("REQUEST PAGE:", page);
 
   return await fetchAPI(`/api/users?${params.toString()}`, {
     headers: {
@@ -63,10 +62,6 @@ export default async function Page({ searchParams: searchParamsPromise }) {
   const users = usersResult?.data ?? [];
   const meta = usersResult?.meta;
 
-  console.log("SEARCH PARAMS:", searchParams);
-  console.log("PAGE PARSED:", page);
-  console.log("META FROM BE:", usersResult?.meta);
-
   return (
   <div
     style={{
@@ -108,6 +103,7 @@ export default async function Page({ searchParams: searchParamsPromise }) {
         }}
       >
         <h3 style={{ marginBottom: 16 }}>User List</h3>
+        <SearchInput />
         <UserList users={users} />
         <Pagination meta={meta} searchParams={searchParams} />
       </div>
