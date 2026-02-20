@@ -43,6 +43,11 @@ export default function LoginPage() {
       throw new Error(data.message || "Login failed");
     }
 
+    if (data.requires2FA) {
+      router.push(`/webauthn/login?email=${encodeURIComponent(data.email)}`);
+      return;
+    }
+
     router.push("/");
   } catch (err) {
     setError(err.message);

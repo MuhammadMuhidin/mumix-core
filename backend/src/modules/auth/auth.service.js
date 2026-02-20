@@ -2,6 +2,12 @@ const userRepo = require("../user/user.repository");
 const AppError = require("../../core/app.error");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse
+} = require("@simplewebauthn/server");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -28,6 +34,13 @@ exports.login = async ({ email, password }) => {
     throw new AppError("Account disabled", 403);
   }
 
+  if (user.webauthn_enabled) {
+    return {
+      requires2FA: true,
+      email: user.email
+    };
+  }
+
   const token = jwt.sign(
     {
       id: user.id,
@@ -49,4 +62,160 @@ exports.login = async ({ email, password }) => {
       role: user.role
     }
   };
+};
+
+// ===============================
+// GENERATE REGISTER OPTIONS
+// ===============================
+exports.generateWebAuthnRegisterOptions = async (userId) => {
+  const user = await userRepo.findById(userId);
+  const RP_ID = process.env.RP_ID;
+  const ORIGIN = process.env.ORIGIN;
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const options = await generateRegistrationOptions({
+    rpName: "Mumix App",
+    rpID: RP_ID,
+    userID: String(user.id),
+    userName: user.email,
+    attestationType: "none",
+    authenticatorSelection: {
+      userVerification: "required"
+    }
+  });
+
+  await userRepo.update(user.id, {
+    webauthn_current_challenge: options.challenge
+  });
+
+  return options;
+};
+
+// ===============================
+// VERIFY REGISTER
+// ===============================
+exports.verifyWebAuthnRegister = async (userId, credential) => {
+  const user = await userRepo.findById(userId);
+  const RP_ID = process.env.RP_ID;
+  const ORIGIN = process.env.ORIGIN;
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const verification = await verifyRegistrationResponse({
+    response: credential,
+    expectedChallenge: user.webauthn_current_challenge,
+    expectedOrigin: ORIGIN,
+    expectedRPID: RP_ID
+  });
+
+  if (!verification.verified) {
+    throw new AppError("Registration failed", 400);
+  }
+
+  const { credentialID, credentialPublicKey, counter } =
+    verification.registrationInfo;
+
+  const toBase64Url = (buffer) =>
+  Buffer.from(buffer)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  await userRepo.update(user.id, {
+    webauthn_credential_id: toBase64Url(credentialID),
+    webauthn_public_key: toBase64Url(credentialPublicKey),
+    webauthn_counter: counter,
+    webauthn_enabled: true
+  });
+
+  return { success: true };
+};
+
+exports.generateWebAuthnLoginOptions = async (email) => {
+  const user = await userRepo.findByEmail(email);
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  if (!user.webauthn_enabled) {
+    throw new AppError("2FA not enabled", 400);
+  }
+
+  const base64UrlToBuffer = (base64url) =>
+    Buffer.from(
+      base64url
+        .replace(/-/g, "+")
+        .replace(/_/g, "/"),
+      "base64"
+    );
+
+  const options = await generateAuthenticationOptions({
+    rpID: "localhost",
+    allowCredentials: [
+      {
+        id: base64UrlToBuffer(user.webauthn_credential_id),
+        type: "public-key",
+        transports: ["internal"]
+      }
+    ],
+    userVerification: "required"
+  });
+
+  await userRepo.update(user.id, {
+    webauthn_current_challenge: options.challenge
+  });
+
+  return options;
+};
+
+exports.verifyWebAuthnLogin = async (email, credential) => {
+  const user = await userRepo.findByEmail(email);
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  const base64UrlToBuffer = (base64url) => {
+    const padding = "=".repeat((4 - (base64url.length % 4)) % 4);
+    const base64 = (base64url + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    return Buffer.from(base64, "base64");
+  };
+
+  const verification = await verifyAuthenticationResponse({
+    response: credential,
+    expectedChallenge: user.webauthn_current_challenge,
+    expectedOrigin: "http://localhost:3000",
+    expectedRPID: "localhost",
+    authenticator: {
+      credentialID: base64UrlToBuffer(user.webauthn_credential_id),
+      credentialPublicKey: base64UrlToBuffer(user.webauthn_public_key),
+      counter: user.webauthn_counter
+    }
+  });
+
+  if (!verification.verified) {
+    throw new AppError("Invalid fingerprint", 401);
+  }
+
+  await userRepo.update(user.id, {
+    webauthn_counter: verification.authenticationInfo.newCounter
+  });
+
+  const token = jwt.sign(
+    {
+      id: user.id,
+      role: user.role,
+      tokenVersion: Number(user.token_version)
+    },
+    JWT_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  return { token };
 };
