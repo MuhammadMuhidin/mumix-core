@@ -2,16 +2,12 @@ import DeleteButton from "../../../../components/DeleteButton";
 import { updateUser, deleteUser } from "../../../actions";
 import { notFound } from "next/navigation";
 import { fetchAPI } from "../../../../lib/api";
+import { requireAdmin } from "../../../../lib/auth";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 async function getUser(id) {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    redirect("/login");
-  }
 
   return await fetchAPI(`/api/users/${id}`, {
     cache: "no-store",
@@ -21,20 +17,9 @@ async function getUser(id) {
   });
 }
 
-async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) redirect("/login");
-
-  return await fetchAPI("/api/auth/me", {
-    headers: {
-      Cookie: `token=${token}`,
-    },
-  });
-}
-
 export default async function Page({ params }) {
+  await requireAdmin(); 
+
   const resolvedParams = await params;
   const id = resolvedParams?.id;
   if (!id) notFound();
@@ -42,11 +27,6 @@ export default async function Page({ params }) {
   const userResult = await getUser(id);
   const user = userResult.data??[];
   if (!user) notFound();
-
-  const currentUser = await getCurrentUser();
-  if (currentUser.data.user.role !== "admin") {
-    redirect("/");
-  }
 
   const inputStyle = {
   padding: "12px 14px",

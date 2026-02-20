@@ -4,15 +4,13 @@ import SearchInput from "../../components/SearchInput";
 import { logout } from "../actions";
 import { fetchAPI } from "../../lib/api";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "../../lib/auth";
 import Link from "next/link";
 
 
 async function getUsers({ page, limit, search, sortBy, sortOrder }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-
-  if (!token) redirect("/login");
 
   const params = new URLSearchParams({
     page: String(page),
@@ -30,19 +28,6 @@ async function getUsers({ page, limit, search, sortBy, sortOrder }) {
   
 }
 
-async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) redirect("/login");
-
-  return await fetchAPI("/api/auth/me", {
-    headers: {
-      Cookie: `token=${token}`,
-    },
-  });
-}
-
 export default async function Page({ searchParams: searchParamsPromise }) {
   const searchParams = await searchParamsPromise;
   const rawPage = searchParams?.page;
@@ -52,12 +37,7 @@ export default async function Page({ searchParams: searchParamsPromise }) {
   const sortBy = searchParams?.sortBy || "id";
   const sortOrder = searchParams?.sortOrder || "asc";
 
-  const currentUser = await getCurrentUser();
-
-  if (currentUser.data.user.role !== "admin") {
-    redirect("/");
-  }
-
+  const currentUser = await requireAdmin();
   const usersResult = await getUsers({ page, limit, search, sortBy, sortOrder });
 
   const users = usersResult?.data ?? [];
@@ -86,8 +66,8 @@ export default async function Page({ searchParams: searchParamsPromise }) {
         <div>
           <h1 style={{ margin: 0 }}>User Management</h1>
           <h2>
-            Welcome, {currentUser.data.user.name}! you have{" "}
-            {currentUser.data.user.role === "admin"
+            Welcome, {currentUser.name}! you have{" "}
+            {currentUser.role === "admin"
               ? "Administrator"
               : "User"}{" "}
             access 🔐
