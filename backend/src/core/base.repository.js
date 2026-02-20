@@ -1,9 +1,10 @@
 const pool = require("../config/db");
 
 class BaseRepository {
-  constructor(table, allowedFields, searchableFields = []) {
+  constructor(table, allowedFields, selectFields, searchableFields = []) {
     this.table = table;
     this.allowedFields = allowedFields;
+    this.selectFields = selectFields;
     this.searchableFields = searchableFields;
   }
 
@@ -69,7 +70,7 @@ class BaseRepository {
       sortOrder.toLowerCase() === "desc" ? "DESC" : "ASC";
 
     const dataQuery = `
-      SELECT *
+      SELECT ${this.selectFields}
       FROM ${this.table}
       ${whereClause}
       ORDER BY ${sortBy} ${order}
@@ -83,7 +84,7 @@ class BaseRepository {
     const { rows } = await pool.query(dataQuery, values);
 
     const countQuery = `
-      SELECT COUNT(*)::int AS total
+      SELECT COUNT(id)::int AS total
       FROM ${this.table}
       ${whereClause}
     `;
@@ -111,16 +112,8 @@ class BaseRepository {
 
   async findById(id) {
     const { rows } = await pool.query(
-      `SELECT * FROM ${this.table} WHERE id = $1`,
+      `SELECT ${this.selectFields} FROM ${this.table} WHERE id = $1`,
       [id]
-    );
-    return rows[0] || null;
-  }
-
-  async findByEmail(email) {
-    const { rows } = await pool.query(
-      `SELECT * FROM ${this.table} WHERE email = $1`,
-      [email]
     );
     return rows[0] || null;
   }
@@ -141,7 +134,7 @@ class BaseRepository {
     const query = `
       INSERT INTO ${this.table} (${columns})
       VALUES (${placeholders})
-      RETURNING *
+      RETURNING ${this.selectFields}
     `;
 
     const { rows } = await pool.query(query, values);
@@ -165,7 +158,7 @@ class BaseRepository {
       UPDATE ${this.table}
       SET ${setClause}
       WHERE id = $${keys.length + 1}
-      RETURNING *
+      RETURNING ${this.selectFields}
     `;
 
     const { rows } = await pool.query(query, [...values, id]);

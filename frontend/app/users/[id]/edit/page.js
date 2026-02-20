@@ -1,7 +1,7 @@
-import DeleteButton from "../../../components/DeleteButton";
-import { updateUser, deleteUser } from "../../actions";
+import DeleteButton from "../../../../components/DeleteButton";
+import { updateUser, deleteUser } from "../../../actions";
 import { notFound } from "next/navigation";
-import { fetchAPI } from "../../../lib/api";
+import { fetchAPI } from "../../../../lib/api";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 

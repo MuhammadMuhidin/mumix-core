@@ -31,7 +31,7 @@ export default function UserList({ users }) {
           >
             <div>
               <Link
-                href={`/users/${u.id}`}
+                href={`/users/${u.id}/edit`}
                 style={{
                   fontWeight: 600,
                   textDecoration: "none",

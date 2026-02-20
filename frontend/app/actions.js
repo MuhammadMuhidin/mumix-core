@@ -38,8 +38,8 @@ export async function createUser(formData) {
     body: JSON.stringify(payload)
   });
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/users");
+  redirect("/users");
 }
 
 export async function updateUser(id, formData) {
@@ -51,8 +51,8 @@ export async function updateUser(id, formData) {
     body: JSON.stringify(payload)
   });
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/users");
+  redirect("/users");
 }
 
 export async function deleteUser(id) {
@@ -61,8 +61,8 @@ export async function deleteUser(id) {
     headers: await getAuthHeaders()
   });
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/users");
+  redirect("/users");
 }
 
 export async function logout() {
