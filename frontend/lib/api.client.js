@@ -6,29 +6,48 @@ if (!API) {
   throw new Error("NEXT_PUBLIC_API_URL is not defined");
 }
 
+function getCookie(name) {
+  if (typeof document === "undefined") return null;
+
+  const match = document.cookie.match(
+    new RegExp("(^| )" + name + "=([^;]+)")
+  );
+
+  return match ? match[2] : null;
+}
+
 export async function fetchAPI(path, options = {}) {
+  const csrfToken = getCookie("csrf_token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (csrfToken) {
+    headers["x-csrf-token"] = csrfToken;
+  }
+
   const res = await fetch(`${API}${path}`, {
-    cache: "no-store",
+    ...options,
+    headers,
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
-    ...options
   });
 
   const contentType = res.headers.get("content-type") || "";
+
   if (res.status === 401) {
     redirect("/login");
   }
 
-  const data = await res.json();
-  if (res.status === 403) {
-    throw new Error(data.message || "Account disabled");
-  }
-
   if (!contentType.includes("application/json")) {
     throw new Error("Response is not valid JSON.");
+  }
+
+  const data = await res.json();
+
+  if (res.status === 403) {
+    throw new Error(data.message || "Forbidden");
   }
 
   if (!res.ok) {

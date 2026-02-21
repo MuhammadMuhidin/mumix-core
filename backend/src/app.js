@@ -5,6 +5,7 @@ const cors = require("cors");
 const userRoutes = require("./modules/user/user.route");
 const authRoutes = require("./modules/auth/auth.route");
 const { errorHandler } = require("./middlewares/error");
+const { setCSRFCookie, verifyCSRF } = require("./middlewares/csrf");
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use(
 );
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
+
+app.use(setCSRFCookie);
+app.use(verifyCSRF);
 
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { fetchAPI } from "./api";
+import { fetchAPI } from "./api.client";
 
 export async function getCurrentUser() {
   const cookieStore = await cookies();

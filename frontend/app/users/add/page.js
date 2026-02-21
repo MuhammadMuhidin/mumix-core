@@ -1,20 +1,15 @@
 import UserForm from "../../../components/UserForm";
 import { createUser } from "../../actions";
-import { fetchAPI } from "../../../lib/api";
-import { cookies } from "next/headers";
+import { fetchAPIServer } from "../../../lib/api.server";
 import { redirect } from "next/navigation";
 
 async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) redirect("/login");
-
-  return await fetchAPI("/api/auth/me", {
-    headers: {
-      Cookie: `token=${token}`,
-    },
+  const data = await fetchAPIServer("/api/auth/me", {
+    method: "GET",
+    cache: "no-store",
   });
+
+  return data;
 }
 
 export default async function Page() {

@@ -7,6 +7,7 @@ const allowFields = [
   "name",
   "email",
   "phone",
+  "password",
   "is_active",
   "token_version",
   "role",

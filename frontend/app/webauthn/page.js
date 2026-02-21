@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { fetchAPI } from "../../lib/api.client";
 
 export default function WebAuthnPage() {
   const router = useRouter();
@@ -44,31 +45,13 @@ export default function WebAuthnPage() {
       setLoading(true);
       setMessage("");
 
-      // 1️⃣ Ambil register options
-      const res = await fetch(
-        "http://localhost:4000/api/auth/webauthn/register/options",
+      // 1️⃣ Ambil register options (CSRF otomatis)
+      const options = await fetchAPI(
+        "/api/auth/webauthn/register/options",
         {
           method: "POST",
-          credentials: "include",
         }
       );
-
-      const text = await res.text();
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = null;
-      }
-
-      if (!res.ok) {
-        throw new Error(
-          data?.message || text || "Failed to get register options"
-        );
-      }
-
-      const options = data;
 
       // 2️⃣ Convert challenge + user id
       options.challenge = base64ToUint8Array(options.challenge);
@@ -83,7 +66,6 @@ export default function WebAuthnPage() {
         throw new Error("Credential creation failed");
       }
 
-      // 4️⃣ Prepare payload
       const credentialPayload = {
         id: credential.id,
         rawId: arrayBufferToBase64Url(credential.rawId),
@@ -98,40 +80,22 @@ export default function WebAuthnPage() {
         },
       };
 
-      // 5️⃣ Verify ke backend
-      const verifyRes = await fetch(
-        "http://localhost:4000/api/auth/webauthn/register/verify",
+      // 4️⃣ Verify ke backend (CSRF otomatis)
+      await fetchAPI(
+        "/api/auth/webauthn/register/verify",
         {
           method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ credential: credentialPayload }),
+          body: JSON.stringify({
+            credential: credentialPayload,
+          }),
         }
       );
 
-      const verifyText = await verifyRes.text();
-
-      let verifyData;
-      try {
-        verifyData = JSON.parse(verifyText);
-      } catch {
-        verifyData = null;
-      }
-
-      if (!verifyRes.ok) {
-        throw new Error(
-          verifyData?.message || verifyText || "Verification failed"
-        );
-      }
-
       setMessage("Success: Fingerprint berhasil diaktifkan.");
       router.push("/");
-
     } catch (err) {
       console.error(err);
-      setMessage("Error: " + err.message);
+      setMessage("Error: " + (err.message || "Enrollment failed"));
     } finally {
       setLoading(false);
     }

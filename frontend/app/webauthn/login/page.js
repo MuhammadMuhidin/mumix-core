@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { fetchAPI } from "../../../lib/api.client";
 
 export default function WebAuthnLoginPage() {
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL;
-
   const [message, setMessage] = useState("Verifying fingerprint...");
 
   const base64ToUint8Array = (base64) => {
@@ -43,38 +42,33 @@ export default function WebAuthnLoginPage() {
   useEffect(() => {
     const run2FA = async () => {
       try {
-        const meRes = await fetch(`${API}/api/auth/me`, {
-          credentials: "include"
-        });
-
-        if (meRes.ok) {
+        // 1️⃣ cek apakah sudah login
+        try {
+          await fetchAPI("/api/auth/me", {
+            method: "GET",
+          });
           router.push("/");
           return;
+        } catch {
+          // lanjut ke 2FA
         }
 
-        const res = await fetch(
-          `${API}/api/auth/webauthn/login/options`,
+        // 2️⃣ ambil challenge (CSRF otomatis)
+        const options = await fetchAPI(
+          "/api/auth/webauthn/login/options",
           {
             method: "POST",
-            credentials: "include"
           }
         );
-        
-        if (!res.ok) {
-          router.push("/login");
-          return;
-        }
-
-        const options = await res.json();
 
         options.challenge = base64ToUint8Array(options.challenge);
         options.allowCredentials = options.allowCredentials.map((cred) => ({
           ...cred,
-          id: base64ToUint8Array(cred.id)
+          id: base64ToUint8Array(cred.id),
         }));
 
         const assertion = await navigator.credentials.get({
-          publicKey: options
+          publicKey: options,
         });
 
         const credentialPayload = {
@@ -93,23 +87,20 @@ export default function WebAuthnLoginPage() {
             ),
             userHandle: assertion.response.userHandle
               ? arrayBufferToBase64Url(assertion.response.userHandle)
-              : null
-          }
+              : null,
+          },
         };
 
-        const verifyRes = await fetch(
-          `${API}/api/auth/webauthn/login/verify`,
+        // 3️⃣ verifikasi credential (CSRF otomatis)
+        await fetchAPI(
+          "/api/auth/webauthn/login/verify",
           {
             method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential: credentialPayload })
+            body: JSON.stringify({
+              credential: credentialPayload,
+            }),
           }
         );
-
-        if (!verifyRes.ok) {
-          throw new Error();
-        }
 
         router.push("/");
       } catch {
