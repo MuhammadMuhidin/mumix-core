@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function WebAuthnPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -22,27 +24,27 @@ export default function WebAuthnPage() {
     return outputArray;
   };
 
-const arrayBufferToBase64Url = (buffer) => {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
+  const arrayBufferToBase64Url = (buffer) => {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
 
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
 
-  return window
-    .btoa(binary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-};
+    return window
+      .btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  };
 
   const handleEnroll = async () => {
     try {
       setLoading(true);
       setMessage("");
 
-      // 1. Ambil register options
+      // 1️⃣ Ambil register options
       const res = await fetch(
         "http://localhost:4000/api/auth/webauthn/register/options",
         {
@@ -51,17 +53,28 @@ const arrayBufferToBase64Url = (buffer) => {
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to get register options");
+      const text = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = null;
       }
 
-      const options = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data?.message || text || "Failed to get register options"
+        );
+      }
 
-      // 2. Convert challenge + user id
+      const options = data;
+
+      // 2️⃣ Convert challenge + user id
       options.challenge = base64ToUint8Array(options.challenge);
       options.user.id = base64ToUint8Array(options.user.id);
 
-      // 3. Trigger biometric
+      // 3️⃣ Trigger biometric
       const credential = await navigator.credentials.create({
         publicKey: options,
       });
@@ -70,22 +83,22 @@ const arrayBufferToBase64Url = (buffer) => {
         throw new Error("Credential creation failed");
       }
 
-      // 4. Prepare payload untuk backend
-const credentialPayload = {
-  id: credential.id,
-  rawId: arrayBufferToBase64Url(credential.rawId),
-  type: credential.type,
-  response: {
-    attestationObject: arrayBufferToBase64Url(
-      credential.response.attestationObject
-    ),
-    clientDataJSON: arrayBufferToBase64Url(
-      credential.response.clientDataJSON
-    ),
-  },
-};
+      // 4️⃣ Prepare payload
+      const credentialPayload = {
+        id: credential.id,
+        rawId: arrayBufferToBase64Url(credential.rawId),
+        type: credential.type,
+        response: {
+          attestationObject: arrayBufferToBase64Url(
+            credential.response.attestationObject
+          ),
+          clientDataJSON: arrayBufferToBase64Url(
+            credential.response.clientDataJSON
+          ),
+        },
+      };
 
-      // 5. Kirim ke verify endpoint
+      // 5️⃣ Verify ke backend
       const verifyRes = await fetch(
         "http://localhost:4000/api/auth/webauthn/register/verify",
         {
@@ -98,11 +111,24 @@ const credentialPayload = {
         }
       );
 
-      if (!verifyRes.ok) {
-        throw new Error("Verification failed");
+      const verifyText = await verifyRes.text();
+
+      let verifyData;
+      try {
+        verifyData = JSON.parse(verifyText);
+      } catch {
+        verifyData = null;
       }
 
-      setMessage("Fingerprint berhasil diaktifkan.");
+      if (!verifyRes.ok) {
+        throw new Error(
+          verifyData?.message || verifyText || "Verification failed"
+        );
+      }
+
+      setMessage("Success: Fingerprint berhasil diaktifkan.");
+      router.push("/");
+
     } catch (err) {
       console.error(err);
       setMessage("Error: " + err.message);
@@ -112,26 +138,97 @@ const credentialPayload = {
   };
 
   return (
-    <div style={{ padding: 40 }}>
-      <h2>Enable Fingerprint (2FA)</h2>
-
-      <button
-        onClick={handleEnroll}
-        disabled={loading}
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f4f6f9",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 40,
+      }}
+    >
+      <div
         style={{
-          padding: "10px 20px",
-          fontSize: 16,
-          cursor: "pointer",
+          width: 480,
+          background: "#ffffff",
+          borderRadius: 16,
+          padding: 40,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
         }}
       >
-        {loading ? "Processing..." : "Enable Fingerprint"}
-      </button>
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ margin: 0 }}>
+            Enable Fingerprint (2FA)
+          </h2>
+          <p
+            style={{
+              marginTop: 8,
+              fontSize: 14,
+              color: "#6b7280",
+              lineHeight: 1.6,
+            }}
+          >
+            Add an extra layer of security by enabling fingerprint authentication
+            for your account.
+          </p>
+        </div>
 
-      {message && (
-        <p style={{ marginTop: 20 }}>
-          {message}
-        </p>
-      )}
+        <button
+          onClick={handleEnroll}
+          disabled={loading}
+          style={{
+            width: "100%",
+            padding: "12px 16px",
+            background: "#111827",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: 8,
+            fontSize: 15,
+            fontWeight: 500,
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? "Processing..." : "Enable Fingerprint"}
+        </button>
+
+        {message && (
+          <div
+            style={{
+              marginTop: 24,
+              padding: "12px 14px",
+              borderRadius: 8,
+              background:
+                message.toLowerCase().includes("success")
+                  ? "#ecfdf5"
+                  : "#fef2f2",
+              border:
+                message.toLowerCase().includes("success")
+                  ? "1px solid #a7f3d0"
+                  : "1px solid #fecaca",
+              color:
+                message.toLowerCase().includes("success")
+                  ? "#065f46"
+                  : "#b91c1c",
+              fontSize: 14,
+            }}
+          >
+            {message}
+          </div>
+        )}
+
+        <div
+          style={{
+            marginTop: 28,
+            fontSize: 12,
+            color: "#9ca3af",
+            textAlign: "center",
+          }}
+        >
+          Your fingerprint data is securely stored and encrypted.
+        </div>
+      </div>
     </div>
   );
 }
