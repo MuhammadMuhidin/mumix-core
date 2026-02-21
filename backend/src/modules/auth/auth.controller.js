@@ -3,13 +3,16 @@ const authService = require("./auth.service");
 exports.login = async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
-
     if (result.requires2FA) {
-      return res.status(200).json({
-        success: true,
-        requires2FA: true,
-        email: result.email
+      req.session.pending2FA = result.email;
+      req.session.save((err) => {
+        if (err) return next(err);
+        return res.status(200).json({
+          success: true,
+          requires2FA: true
+        });
       });
+      return;
     }
 
     // Set HTTP-only cookie
@@ -27,7 +30,6 @@ exports.login = async (req, res, next) => {
         user: result.user
       }
     });
-
   } catch (err) {
     next(err);
   }
@@ -74,9 +76,20 @@ exports.webauthnRegisterVerify = async (req, res, next) => {
 
 exports.webauthnLoginOptions = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    const options = await authService.generateWebAuthnLoginOptions(email);
+    const email = req.session.pending2FA;
+
+    if (!email) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized 2FA attempt"
+      });
+    }
+
+    const options =
+      await authService.generateWebAuthnLoginOptions(email);
+
     res.json(options);
+
   } catch (err) {
     next(err);
   }
@@ -84,9 +97,22 @@ exports.webauthnLoginOptions = async (req, res, next) => {
 
 exports.webauthnLoginVerify = async (req, res, next) => {
   try {
-    const { email, credential } = req.body;
+    const email = req.session.pending2FA;
 
-    const result = await authService.verifyWebAuthnLogin(email, credential);
+    if (!email) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized 2FA attempt"
+      });
+    }
+
+    const { credential } = req.body;
+
+    const result =
+      await authService.verifyWebAuthnLogin(email, credential);
+
+    // clear pending state
+    req.session.pending2FA = null;
 
     res.cookie("token", result.token, {
       httpOnly: true,
@@ -97,7 +123,55 @@ exports.webauthnLoginVerify = async (req, res, next) => {
     });
 
     res.json({ success: true });
+
   } catch (err) {
     next(err);
   }
+};
+
+exports.disable2FAOptions = async (req, res, next) => {
+  try {
+    const options =
+      await authService.generateDisable2FAOptions(req.user.id);
+
+    res.json(options);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.disable2FAVerify = async (req, res, next) => {
+  try {
+    const { password, credential } = req.body;
+
+    await authService.disable2FAWithReauth(
+      req.user.id,
+      password,
+      credential
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.logout = (req, res, next) => {
+  req.session.destroy(err => {
+    if (err) return next(err);
+
+    res.clearCookie("connect.sid", {
+      path: "/",
+      sameSite: "lax",
+      secure: false
+    });
+
+    res.clearCookie("token", {
+      path: "/",
+      sameSite: "lax",
+      secure: false
+    });
+
+    res.status(200).json({ success: true });
+  });
 };

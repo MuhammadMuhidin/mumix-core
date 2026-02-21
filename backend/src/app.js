@@ -1,4 +1,5 @@
 const cookieParser = require("cookie-parser");
+const session = require("express-session");
 const express = require("express");
 const cors = require("cors");
 const userRoutes = require("./modules/user/user.route");
@@ -8,6 +9,18 @@ const { errorHandler } = require("./middlewares/error");
 const app = express();
 
 app.use(cookieParser());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "dev-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false, // ubah true di production HTTPS
+    },
+  })
+);
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 

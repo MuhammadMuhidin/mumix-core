@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function WebAuthnLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email");
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   const [message, setMessage] = useState("Verifying fingerprint...");
 
@@ -42,18 +41,29 @@ export default function WebAuthnLoginPage() {
   };
 
   useEffect(() => {
-    if (!email) return;
-
     const run2FA = async () => {
       try {
+        const meRes = await fetch(`${API}/api/auth/me`, {
+          credentials: "include"
+        });
+
+        if (meRes.ok) {
+          router.push("/");
+          return;
+        }
+
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/webauthn/login/options`,
+          `${API}/api/auth/webauthn/login/options`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email })
+            credentials: "include"
           }
         );
+        
+        if (!res.ok) {
+          router.push("/login");
+          return;
+        }
 
         const options = await res.json();
 
@@ -87,24 +97,28 @@ export default function WebAuthnLoginPage() {
           }
         };
 
-        await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/webauthn/login/verify`,
+        const verifyRes = await fetch(
+          `${API}/api/auth/webauthn/login/verify`,
           {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, credential: credentialPayload })
+            body: JSON.stringify({ credential: credentialPayload })
           }
         );
 
+        if (!verifyRes.ok) {
+          throw new Error();
+        }
+
         router.push("/");
-      } catch (err) {
+      } catch {
         setMessage("Fingerprint verification failed.");
       }
     };
 
     run2FA();
-  }, [email]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900">

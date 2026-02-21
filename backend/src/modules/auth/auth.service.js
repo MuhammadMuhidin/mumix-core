@@ -64,9 +64,6 @@ exports.login = async ({ email, password }) => {
   };
 };
 
-// ===============================
-// GENERATE REGISTER OPTIONS
-// ===============================
 exports.generateWebAuthnRegisterOptions = async (userId) => {
   const user = await userRepo.findById(userId);
   const RP_ID = process.env.RP_ID;
@@ -93,9 +90,6 @@ exports.generateWebAuthnRegisterOptions = async (userId) => {
   return options;
 };
 
-// ===============================
-// VERIFY REGISTER
-// ===============================
 exports.verifyWebAuthnRegister = async (userId, credential) => {
   const user = await userRepo.findById(userId);
   const RP_ID = process.env.RP_ID;
@@ -218,4 +212,80 @@ exports.verifyWebAuthnLogin = async (email, credential) => {
   );
 
   return { token };
+};
+
+exports.generateDisable2FAOptions = async (userId) => {
+  const user = await userRepo.findById(userId);
+
+  if (!user.webauthn_enabled) {
+    throw new AppError("2FA not enabled", 400);
+  }
+
+  const options = await generateAuthenticationOptions({
+    rpID: process.env.RP_ID,
+    allowCredentials: [
+      {
+        id: Buffer.from(
+          user.webauthn_credential_id,
+          "base64url"
+        ),
+        type: "public-key"
+      }
+    ],
+    userVerification: "required"
+  });
+
+  await userRepo.update(user.id, {
+    webauthn_current_challenge: options.challenge
+  });
+
+  return options;
+};
+
+exports.disable2FAWithReauth = async (
+  userId,
+  password,
+  credential
+) => {
+  const user = await userRepo.findByIdWithPassword(userId);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  // 1️⃣ Verify password
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new AppError("Invalid password", 401);
+  }
+
+  const verification = await verifyAuthenticationResponse({
+    response: credential,
+    expectedChallenge: user.webauthn_current_challenge,
+    expectedOrigin: process.env.ORIGIN,
+    expectedRPID: process.env.RP_ID,
+    authenticator: {
+      credentialID: Buffer.from(
+        user.webauthn_credential_id,
+        "base64url"
+      ),
+      credentialPublicKey: Buffer.from(
+        user.webauthn_public_key,
+        "base64url"
+      ),
+      counter: user.webauthn_counter
+    }
+  });
+
+  if (!verification.verified) {
+    throw new AppError("Invalid fingerprint", 401);
+  }
+
+  await userRepo.update(user.id, {
+    webauthn_enabled: false,
+    webauthn_credential_id: null,
+    webauthn_public_key: null,
+    webauthn_counter: 0,
+    webauthn_current_challenge: null
+  });
 };

@@ -44,7 +44,7 @@ export default function LoginPage() {
     }
 
     if (data.requires2FA) {
-      router.push(`/webauthn/login?email=${encodeURIComponent(data.email)}`);
+      router.push("/webauthn/login");
       return;
     }
 
@@ -57,51 +57,146 @@ export default function LoginPage() {
 }
 
 return (
-  <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-10">
-      <h1 className="text-3xl font-semibold text-slate-800">
+<div
+  style={{
+    minHeight: "100vh",
+    background: "#f4f6f9",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+  }}
+>
+  <div
+    style={{
+      width: 420,
+      background: "#ffffff",
+      borderRadius: 16,
+      padding: 36,
+      boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+    }}
+  >
+    {/* Header */}
+    <div style={{ marginBottom: 28 }}>
+      <h1 style={{ margin: 0 }}>
         Sign In
       </h1>
-      <p className="text-sm text-slate-500 mt-2 mb-8">
-        Access your dashboard
+      <p
+        style={{
+          marginTop: 8,
+          fontSize: 14,
+          color: "#6b7280",
+        }}
+      >
+        Access your dashboard securely
       </p>
+    </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <input
-            name="email"
-            type="email"
-            placeholder="Email"
-            required
-            className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent transition"
-          />
-        </div>
-
-        <div>
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            required
-            className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent transition"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition disabled:opacity-60"
+    {/* Form */}
+    <form onSubmit={handleSubmit}>
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            fontWeight: 500,
+            marginBottom: 6,
+            color: "#374151",
+          }}
         >
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
-      </form>
+          Email Address
+        </label>
 
-      {error && (
-        <p style={{ color: "red", marginTop: "8px" }}>
-          {error}
-        </p>
-      )}
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder="you@example.com"
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            fontSize: 14,
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            fontWeight: 500,
+            marginBottom: 6,
+            color: "#374151",
+          }}
+        >
+          Password
+        </label>
+
+        <input
+          name="password"
+          type="password"
+          required
+          placeholder="Enter your password"
+          style={{
+            width: "100%",
+            padding: "10px 14px",
+            borderRadius: 8,
+            border: "1px solid #d1d5db",
+            fontSize: 14,
+          }}
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        style={{
+          width: "100%",
+          padding: "10px 16px",
+          background: "#111827",
+          color: "#ffffff",
+          border: "none",
+          borderRadius: 8,
+          cursor: "pointer",
+          opacity: loading ? 0.6 : 1,
+          fontWeight: 500,
+        }}
+      >
+        {loading ? "Signing in..." : "Sign In"}
+      </button>
+    </form>
+
+    {/* Error */}
+    {error && (
+      <div
+        style={{
+          marginTop: 20,
+          padding: "12px 14px",
+          background: "#fef2f2",
+          border: "1px solid #fecaca",
+          borderRadius: 8,
+          fontSize: 14,
+          color: "#b91c1c",
+        }}
+      >
+        {error}
+      </div>
+    )}
+
+    <div
+      style={{
+        marginTop: 24,
+        fontSize: 12,
+        color: "#9ca3af",
+        textAlign: "center",
+      }}
+    >
+      Secure authentication with password & fingerprint
     </div>
   </div>
+</div>
 );
 }

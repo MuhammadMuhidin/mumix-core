@@ -35,7 +35,8 @@ exports.authenticate = async (req, res, next) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      webauthn_enabled: user.webauthn_enabled
     };
 
     next();

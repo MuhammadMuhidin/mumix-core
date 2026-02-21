@@ -64,9 +64,3 @@ export async function deleteUser(id) {
   revalidatePath("/users");
   redirect("/users");
 }
-
-export async function logout() {
-  const cookieStore = await cookies();
-  cookieStore.delete("token");
-  redirect("/login");
-}

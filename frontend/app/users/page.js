@@ -1,7 +1,7 @@
 import UserList from "../../components/UserList";
 import Pagination from "../../components/Pagination";
 import SearchInput from "../../components/SearchInput";  
-import { logout } from "../actions";
+import LogoutButton from "../../components/LogoutButton";
 import { fetchAPI } from "../../lib/api";
 import { cookies } from "next/headers";
 import { requireAdmin } from "../../lib/auth";
@@ -90,22 +90,7 @@ export default async function Page({ searchParams: searchParamsPromise }) {
           Add New User
         </Link>
         </div>
-
-        <form action={logout}>
-          <button
-            type="submit"
-            style={{
-              padding: "8px 16px",
-              background: "#ef4444",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
-        </form>
+        <LogoutButton />
       </div>
 
       <div

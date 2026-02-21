@@ -15,4 +15,9 @@ router.post("/webauthn/register/verify", authenticate, authController.webauthnRe
 router.post("/webauthn/login/options", authController.webauthnLoginOptions);
 router.post("/webauthn/login/verify", authController.webauthnLoginVerify);
 
+router.post("/webauthn/disable/options", authenticate, authController.disable2FAOptions);
+router.post("/webauthn/disable/verify", authenticate, authController.disable2FAVerify);
+
+router.post("/logout", authController.logout);
+
 module.exports = router;
