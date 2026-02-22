@@ -47,6 +47,8 @@ jobs:
       - name: Build frontend image
         run: |
           docker build \
+            --build-arg NEXT_PUBLIC_API_URL=/api \
+            --build-arg NEXT_PRIVATE_API_URL=http://nginx/api \
             -t $FRONTEND_IMAGE:${{ steps.vars.outputs.IMAGE_TAG }} \
             -t $FRONTEND_IMAGE:latest \
             ./frontend
