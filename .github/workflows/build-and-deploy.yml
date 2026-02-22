@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: docker.io
-  BACKEND_IMAGE: muhidin/backend
-  FRONTEND_IMAGE: muhidin/frontend
+  BACKEND_IMAGE: mumix/core/backend
+  FRONTEND_IMAGE: mumix/core/frontend
 
 jobs:
   build-and-deploy:
@@ -63,7 +63,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /root/repo-folder
-            export IMAGE_TAG=${{ steps.vars.outputs.IMAGE_TAG }}
-            docker compose pull
-            docker compose up -d --remove-orphans
+#            cd /root/repo-folder
+#            export IMAGE_TAG=${{ steps.vars.outputs.IMAGE_TAG }}
+#            docker compose pull
+#            docker compose up -d --remove-orphans
+#
