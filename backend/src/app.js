@@ -9,6 +9,8 @@ const { setCSRFCookie, verifyCSRF } = require("./middlewares/csrf");
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(cookieParser());
 app.use(
   session({

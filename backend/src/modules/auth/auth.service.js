@@ -10,9 +10,15 @@ const {
 } = require("@simplewebauthn/server");
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const RP_ID = process.env.RP_ID;
+const ORIGIN = process.env.ORIGIN;
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined");
+}
+
+if (!RP_ID || !ORIGIN) {
+  throw new Error("RP_ID or ORIGIN is not defined");
 }
 
 exports.login = async ({ email, password }) => {
@@ -66,8 +72,6 @@ exports.login = async ({ email, password }) => {
 
 exports.generateWebAuthnRegisterOptions = async (userId) => {
   const user = await userRepo.findById(userId);
-  const RP_ID = process.env.RP_ID;
-  const ORIGIN = process.env.ORIGIN;
   if (!user) {
     throw new AppError("User not found", 404);
   }
@@ -92,8 +96,6 @@ exports.generateWebAuthnRegisterOptions = async (userId) => {
 
 exports.verifyWebAuthnRegister = async (userId, credential) => {
   const user = await userRepo.findById(userId);
-  const RP_ID = process.env.RP_ID;
-  const ORIGIN = process.env.ORIGIN;
   if (!user) {
     throw new AppError("User not found", 404);
   }
@@ -148,7 +150,7 @@ exports.generateWebAuthnLoginOptions = async (email) => {
     );
 
   const options = await generateAuthenticationOptions({
-    rpID: "localhost",
+    rpID: RP_ID,
     allowCredentials: [
       {
         id: base64UrlToBuffer(user.webauthn_credential_id),
@@ -184,8 +186,8 @@ exports.verifyWebAuthnLogin = async (email, credential) => {
   const verification = await verifyAuthenticationResponse({
     response: credential,
     expectedChallenge: user.webauthn_current_challenge,
-    expectedOrigin: "http://localhost:3000",
-    expectedRPID: "localhost",
+    expectedOrigin: ORIGIN,
+    expectedRPID: RP_ID,
     authenticator: {
       credentialID: base64UrlToBuffer(user.webauthn_credential_id),
       credentialPublicKey: base64UrlToBuffer(user.webauthn_public_key),
@@ -222,7 +224,7 @@ exports.generateDisable2FAOptions = async (userId) => {
   }
 
   const options = await generateAuthenticationOptions({
-    rpID: process.env.RP_ID,
+    rpID: RP_ID,
     allowCredentials: [
       {
         id: Buffer.from(
@@ -262,8 +264,8 @@ exports.disable2FAWithReauth = async (
   const verification = await verifyAuthenticationResponse({
     response: credential,
     expectedChallenge: user.webauthn_current_challenge,
-    expectedOrigin: process.env.ORIGIN,
-    expectedRPID: process.env.RP_ID,
+    expectedOrigin: ORIGIN,
+    expectedRPID: RP_ID,
     authenticator: {
       credentialID: Buffer.from(
         user.webauthn_credential_id,

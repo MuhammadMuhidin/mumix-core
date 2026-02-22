@@ -4,7 +4,7 @@ import { fetchAPIServer } from "../../../lib/api.server";
 import { redirect } from "next/navigation";
 
 async function getCurrentUser() {
-  const data = await fetchAPIServer("/api/auth/me", {
+  const data = await fetchAPIServer("/auth/me", {
     method: "GET",
     cache: "no-store",
   });

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PRIVATE_API_URL;
 
 if (!API) {
   throw new Error("NEXT_PUBLIC_API_URL is not defined");
@@ -59,7 +59,7 @@ async function handleResponse(res) {
 export async function createUser(formData) {
   const payload = normalizePayload(formData);
 
-  const res = await fetch(`${API}/api/users`, {
+  const res = await fetch(`${API}/users`, {
     method: "POST",
     headers: await getServerHeaders(),
     body: JSON.stringify(payload),
@@ -75,7 +75,7 @@ export async function createUser(formData) {
 export async function updateUser(id, formData) {
   const payload = normalizePayload(formData);
 
-  const res = await fetch(`${API}/api/users/${id}`, {
+  const res = await fetch(`${API}/users/${id}`, {
     method: "PUT",
     headers: await getServerHeaders(),
     body: JSON.stringify(payload),
@@ -89,7 +89,7 @@ export async function updateUser(id, formData) {
 }
 
 export async function deleteUser(id) {
-  const res = await fetch(`${API}/api/users/${id}`, {
+  const res = await fetch(`${API}/users/${id}`, {
     method: "DELETE",
     headers: await getServerHeaders(),
     credentials: "include",

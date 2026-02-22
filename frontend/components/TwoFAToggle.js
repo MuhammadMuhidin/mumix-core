@@ -12,7 +12,7 @@ export default function TwoFAToggle() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const data = await fetchAPI("/api/auth/me", {
+        const data = await fetchAPI("/auth/me", {
           method: "GET",
         });
 

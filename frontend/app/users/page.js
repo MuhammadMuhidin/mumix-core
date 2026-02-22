@@ -15,7 +15,7 @@ async function getUsers({ page, limit, search, sortBy, sortOrder }) {
     sortOrder: sortOrder || "asc",
   });
 
-  return await fetchAPIServer(`/api/users?${params.toString()}`, {
+  return await fetchAPIServer(`/users?${params.toString()}`, {
     method: "GET",
     cache: "no-store",
   });

@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API) {
@@ -31,13 +29,13 @@ export async function fetchAPI(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
     ...options,
     headers,
-    credentials: "include",
+    credentials: "include", // browser only
   });
 
   const contentType = res.headers.get("content-type") || "";
 
   if (res.status === 401) {
-    redirect("/login");
+    throw new Error("Unauthorized");
   }
 
   if (!contentType.includes("application/json")) {

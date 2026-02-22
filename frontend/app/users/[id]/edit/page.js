@@ -5,7 +5,7 @@ import { fetchAPIServer } from "../../../../lib/api.server";
 import { requireAdmin } from "../../../../lib/auth";
 
 async function getUser(id) {
-  return await fetchAPIServer(`/api/users/${id}`, {
+  return await fetchAPIServer(`/users/${id}`, {
     method: "GET",
     cache: "no-store",
   });

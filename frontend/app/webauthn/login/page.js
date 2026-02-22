@@ -44,7 +44,7 @@ export default function WebAuthnLoginPage() {
       try {
         // 1️⃣ cek apakah sudah login
         try {
-          await fetchAPI("/api/auth/me", {
+          await fetchAPI("/auth/me", {
             method: "GET",
           });
           router.push("/");
@@ -55,7 +55,7 @@ export default function WebAuthnLoginPage() {
 
         // 2️⃣ ambil challenge (CSRF otomatis)
         const options = await fetchAPI(
-          "/api/auth/webauthn/login/options",
+          "/auth/webauthn/login/options",
           {
             method: "POST",
           }
@@ -93,7 +93,7 @@ export default function WebAuthnLoginPage() {
 
         // 3️⃣ verifikasi credential (CSRF otomatis)
         await fetchAPI(
-          "/api/auth/webauthn/login/verify",
+          "/auth/webauthn/login/verify",
           {
             method: "POST",
             body: JSON.stringify({

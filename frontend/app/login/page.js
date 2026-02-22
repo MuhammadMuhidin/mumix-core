@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchAPI("/api/auth/me", { method: "GET" }).catch(() => {});
+    fetchAPI("/auth/me", { method: "GET" }).catch(() => {});
   }, []);
 
   async function handleSubmit(e) {
@@ -24,7 +24,7 @@ export default function LoginPage() {
     const password = formData.get("password");
 
     try {
-      const data = await fetchAPI("/api/auth/login", {
+      const data = await fetchAPI("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });

@@ -39,7 +39,7 @@ export default function Disable2FAModal({ onClose, onSuccess }) {
 
       // 1️⃣ Ambil challenge re-auth (CSRF otomatis terkirim)
       const options = await fetchAPI(
-        "/api/auth/webauthn/disable/options",
+        "/auth/webauthn/disable/options",
         {
           method: "POST",
         }
@@ -78,7 +78,7 @@ export default function Disable2FAModal({ onClose, onSuccess }) {
 
       // 3️⃣ Kirim password + credential (CSRF otomatis terkirim)
       await fetchAPI(
-        "/api/auth/webauthn/disable/verify",
+        "/auth/webauthn/disable/verify",
         {
           method: "POST",
           body: JSON.stringify({

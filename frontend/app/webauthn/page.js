@@ -47,7 +47,7 @@ export default function WebAuthnPage() {
 
       // 1️⃣ Ambil register options (CSRF otomatis)
       const options = await fetchAPI(
-        "/api/auth/webauthn/register/options",
+        "/auth/webauthn/register/options",
         {
           method: "POST",
         }
@@ -82,7 +82,7 @@ export default function WebAuthnPage() {
 
       // 4️⃣ Verify ke backend (CSRF otomatis)
       await fetchAPI(
-        "/api/auth/webauthn/register/verify",
+        "/auth/webauthn/register/verify",
         {
           method: "POST",
           body: JSON.stringify({
