@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: docker.io
-  BACKEND_IMAGE: muhammadmuhidin/core/backend
-  FRONTEND_IMAGE: muhammadmuhidin/core/frontend
+  BACKEND_IMAGE: muhammadmuhidin/core-backend
+  FRONTEND_IMAGE: muhammadmuhidin/core-frontend
 
 jobs:
   build-and-deploy:
