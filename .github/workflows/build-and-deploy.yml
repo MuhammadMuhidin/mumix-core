@@ -2,9 +2,9 @@ name: Production CI-CD
 
 on:
   workflow_dispatch:
-  #push:
-  #  branches:
-  #    - main
+#  push:
+#    branches:
+#      - main
 
 env:
   REGISTRY: docker.io
@@ -58,13 +58,13 @@ jobs:
           docker push $FRONTEND_IMAGE:${{ steps.vars.outputs.IMAGE_TAG }}
           docker push $FRONTEND_IMAGE:latest
 
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
+#      - name: Deploy to VPS
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          script: |
 #            cd /root/repo-folder
 #            export IMAGE_TAG=${{ steps.vars.outputs.IMAGE_TAG }}
 #            docker compose pull
