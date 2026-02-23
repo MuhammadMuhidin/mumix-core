@@ -2,7 +2,7 @@ const express = require("express");
 const controller = require("./auth.controller");
 const authController = require("./auth.controller");
 const { authenticate } = require("../../middlewares/authentication");
-const { authLimiter } = require("../../middlewares/rateLimit");
+const { authLimiter, otpLimiter } = require("../../middlewares/rateLimit");
 
 const router = express.Router();
 
@@ -17,6 +17,8 @@ router.post("/webauthn/login/verify", authController.webauthnLoginVerify);
 
 router.post("/webauthn/disable/options", authenticate, authController.disable2FAOptions);
 router.post("/webauthn/disable/verify", authenticate, authController.disable2FAVerify);
+
+router.post("/otp/verify", otpLimiter, authController.verifyOtp);
 
 router.post("/logout", authController.logout);
 

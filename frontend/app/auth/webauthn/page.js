@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "../../lib/api.client";
+import { fetchAPI } from "../../../lib/api.client";
 
 export default function WebAuthnPage() {
   const router = useRouter();
@@ -92,7 +92,7 @@ export default function WebAuthnPage() {
       );
 
       setMessage("Success: Fingerprint berhasil diaktifkan.");
-      router.push("/");
+      router.push("/profile");
     } catch (err) {
       console.error(err);
       setMessage("Error: " + (err.message || "Enrollment failed"));

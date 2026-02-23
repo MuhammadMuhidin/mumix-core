@@ -12,7 +12,7 @@ export default function LogoutButton() {
         method: "POST",
       });
 
-      router.push("/login");
+      router.push("/auth/login");
       router.refresh();
     } catch (err) {
       console.error("Logout failed:", err);

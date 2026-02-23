@@ -6,8 +6,10 @@ services:
     container_name: reverse_proxy
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs
     depends_on:
       - frontend
       - backend
@@ -19,7 +21,7 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: "/api"
-        NEXT_PRIVATE_API_URL: "http://nginx/api"
+        NEXT_PRIVATE_API_URL: "http://backend:4000/api"
     container_name: frontend
     expose:
       - "3000"

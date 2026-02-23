@@ -11,3 +11,9 @@ exports.authLimiter = createRateLimit({
     max: 10, // limit each IP to 10 requests per windowMs
     message: "Too many requests, please try again later."
 });
+
+exports.otpLimiter = createRateLimit({
+  windowMs: 3 * 60 * 1000, // 3 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: "Too many requests, please try again later."
+});

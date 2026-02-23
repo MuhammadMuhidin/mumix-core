@@ -8,6 +8,11 @@ const {
   generateAuthenticationOptions,
   verifyAuthenticationResponse
 } = require("@simplewebauthn/server");
+const { sendOtp } = require("./otp.provider");
+const crypto = require("crypto");
+
+const OTP_TTL_MS = 3 * 60 * 1000; // 3 menit
+const OTP_MAX_ATTEMPTS = 5;
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const RP_ID = process.env.RP_ID;
@@ -20,6 +25,15 @@ if (!JWT_SECRET) {
 if (!RP_ID || !ORIGIN) {
   throw new Error("RP_ID or ORIGIN is not defined");
 }
+
+const generateOtp = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+const hashOtp = (otp) =>
+  crypto
+    .createHash("sha256")
+    .update(otp + process.env.OTP_SECRET)
+    .digest("hex");
 
 exports.login = async ({ email, password }) => {
   if (!email || !password) {
@@ -203,17 +217,17 @@ exports.verifyWebAuthnLogin = async (email, credential) => {
     webauthn_counter: verification.authenticationInfo.newCounter
   });
 
-  const token = jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-      tokenVersion: Number(user.token_version)
-    },
-    JWT_SECRET,
-    { expiresIn: "1d" }
-  );
+  const otp = generateOtp();
+  const otpHash = hashOtp(otp);
 
-  return { token };
+  await sendOtp(user.phone, user.name, otp);
+
+  return {
+    email: user.email,
+    otpHash,
+    expiresAt: Date.now() + OTP_TTL_MS,
+    maxAttempts: OTP_MAX_ATTEMPTS
+  };
 };
 
 exports.generateDisable2FAOptions = async (userId) => {
@@ -290,4 +304,29 @@ exports.disable2FAWithReauth = async (
     webauthn_counter: 0,
     webauthn_current_challenge: null
   });
+};
+
+exports.validateOtp = async (sessionData, otpInput) => {
+  if (!sessionData) {
+    throw new AppError("Unauthorized", 403);
+  }
+
+  if (Date.now() > sessionData.expiresAt) {
+    throw new AppError("OTP expired", 401);
+  }
+
+  const hash = hashOtp(otpInput);
+
+  if (hash !== sessionData.otpHash) {
+    if (sessionData.attempts + 1 >= sessionData.maxAttempts) {
+      throw new AppError("Too many attempts", 401);
+    }
+
+    return { valid: false };
+  }
+
+  const user = await userRepo.findByEmail(sessionData.email);
+  if (!user) throw new AppError("User not found", 404);
+
+  return { valid: true, user };
 };

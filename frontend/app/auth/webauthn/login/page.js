@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "../../../lib/api.client";
+import { fetchAPI } from "../../../../lib/api.client";
 
 export default function WebAuthnLoginPage() {
   const router = useRouter();
@@ -92,7 +92,7 @@ export default function WebAuthnLoginPage() {
         };
 
         // 3️⃣ verifikasi credential (CSRF otomatis)
-        await fetchAPI(
+        const res = await fetchAPI(
           "/auth/webauthn/login/verify",
           {
             method: "POST",
@@ -102,6 +102,11 @@ export default function WebAuthnLoginPage() {
           }
         );
 
+        if (res.requiresOTP) {
+          router.push("/auth/otp");
+          return;
+        }
+        
         router.push("/");
       } catch {
         setMessage("Fingerprint verification failed.");

@@ -1,4 +1,5 @@
 const authService = require("./auth.service");
+const jwt = require("jsonwebtoken");
 
 exports.login = async (req, res, next) => {
   try {
@@ -111,18 +112,15 @@ exports.webauthnLoginVerify = async (req, res, next) => {
     const result =
       await authService.verifyWebAuthnLogin(email, credential);
 
-    // clear pending state
-    req.session.pending2FA = null;
+    req.session.pendingOTP = {
+      email: result.email,
+      otpHash: result.otpHash,
+      expiresAt: result.expiresAt,
+      attempts: 0,
+      maxAttempts: result.maxAttempts
+    };
 
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-      path: "/",
-      maxAge: 24 * 60 * 60 * 1000
-    });
-
-    res.json({ success: true });
+    res.json({ success: true, requiresOTP: true });
 
   } catch (err) {
     next(err);
@@ -174,4 +172,49 @@ exports.logout = (req, res, next) => {
 
     res.status(200).json({ success: true });
   });
+};
+
+exports.verifyOtp = async (req, res, next) => {
+  try {
+    const { otp } = req.body;
+    const sessionData = req.session.pendingOTP;
+
+    const result =
+      await authService.validateOtp(sessionData, otp);
+
+    if (!result.valid) {
+      sessionData.attempts += 1;
+
+      return res.status(401).json({
+        success: false,
+        message: "Invalid OTP"
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: result.user.id,
+        role: result.user.role,
+        tokenVersion: Number(result.user.token_version)
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    req.session.pendingOTP = null;
+    req.session.pending2FA = null;
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    next(err);
+  }
 };
