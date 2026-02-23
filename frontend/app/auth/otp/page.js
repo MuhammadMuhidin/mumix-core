@@ -29,20 +29,53 @@ export default function OtpPage() {
   };
 
   return (
-<div className="min-h-screen flex items-center justify-center bg-slate-100 px-6 py-12">
-  <div className="w-[480px] bg-white rounded-2xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] p-10">
-    
-    <div className="mb-7">
-      <h2 className="text-xl font-semibold text-slate-900 m-0">
+<div
+  style={{
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "linear-gradient(to bottom, #f1f5f9, #e2e8f0)",
+    padding: "64px 24px",
+  }}
+>
+  <div
+    style={{
+      width: 480,
+      background: "#ffffff",
+      borderRadius: 20,
+      padding: 48,
+      border: "1px solid #e5e7eb",
+      boxShadow: "0 20px 50px rgba(0,0,0,0.08)",
+      transition: "all 0.2s ease",
+    }}
+  >
+    <div style={{ marginBottom: 32 }}>
+      <h2
+        style={{
+          fontSize: 22,
+          fontWeight: 600,
+          margin: 0,
+          color: "#0f172a",
+          letterSpacing: "-0.3px",
+        }}
+      >
         Verify One-Time Password
       </h2>
-      <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+      <p
+        style={{
+          marginTop: 12,
+          fontSize: 14,
+          color: "#64748b",
+          lineHeight: 1.6,
+        }}
+      >
         We’ve sent a 6-digit code to your registered WhatsApp number.
         Enter it below to complete your login.
       </p>
     </div>
 
-    <div className="space-y-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <input
         type="text"
         inputMode="numeric"
@@ -50,46 +83,70 @@ export default function OtpPage() {
         value={otp}
         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
         placeholder="••••••"
-        className="
-          w-full
-          border border-slate-300
-          focus:border-slate-900
-          focus:ring-2 focus:ring-slate-900/10
-          rounded-lg
-          px-4 py-3
-          text-center
-          tracking-widest
-          text-lg
-          outline-none
-          transition
-        "
+        style={{
+          width: "100%",
+          padding: "16px 20px",
+          borderRadius: 14,
+          border: "1px solid #cbd5e1",
+          background: "#f8fafc",
+          textAlign: "center",
+          fontSize: 22,
+          fontWeight: 500,
+          letterSpacing: "8px",
+          outline: "none",
+          transition: "all 0.2s ease",
+        }}
       />
 
       <button
         onClick={handleSubmit}
         disabled={loading || otp.length !== 6}
-        className={`
-          w-full py-3 rounded-lg text-white font-medium transition
-          ${
-            loading || otp.length !== 6
-              ? "bg-slate-400 cursor-not-allowed"
-              : "bg-slate-900 hover:bg-slate-800"
-          }
-        `}
+        style={{
+          width: "100%",
+          padding: "16px",
+          borderRadius: 14,
+          border: "none",
+          fontSize: 15,
+          fontWeight: 500,
+          color: "#ffffff",
+          background:
+            loading || otp.length !== 6 ? "#94a3b8" : "#0f172a",
+          cursor:
+            loading || otp.length !== 6 ? "not-allowed" : "pointer",
+          opacity: loading ? 0.8 : 1,
+          transition: "all 0.2s ease",
+        }}
       >
         {loading ? "Verifying..." : "Verify & Continue"}
       </button>
     </div>
 
     {error && (
-      <div className="mt-6 rounded-lg px-4 py-3 border border-red-200 bg-red-50">
-        <p className="text-sm text-red-700">
-          {error}
-        </p>
+      <div
+        style={{
+          marginTop: 28,
+          padding: "14px 16px",
+          borderRadius: 14,
+          background: "#fef2f2",
+          border: "1px solid #fecaca",
+          color: "#b91c1c",
+          fontSize: 14,
+          fontWeight: 500,
+        }}
+      >
+        {error}
       </div>
     )}
 
-    <div className="mt-7 text-xs text-slate-400 text-center">
+    <div
+      style={{
+        marginTop: 32,
+        fontSize: 12,
+        color: "#94a3b8",
+        textAlign: "center",
+        letterSpacing: "0.4px",
+      }}
+    >
       Code expires in 3 minutes.
     </div>
   </div>
