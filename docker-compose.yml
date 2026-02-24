@@ -18,7 +18,7 @@ services:
       - app_network
 
   frontend:
-    image: muhammadmuhidin/core-fe:dev
+    image: muhammadmuhidin/core-fe:${ENV_TAG}
     container_name: frontend
     restart: unless-stopped
     expose:
@@ -29,7 +29,7 @@ services:
       - app_network
 
   backend:
-    image: muhammadmuhidin/core-be:dev
+    image: muhammadmuhidin/core-be:${ENV_TAG}
     container_name: backend
     restart: unless-stopped
     expose:
