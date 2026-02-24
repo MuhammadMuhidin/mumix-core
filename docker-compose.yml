@@ -18,7 +18,7 @@ services:
       - app_network
 
   frontend:
-    image: core-frontend:dev
+    image: muhammadmuhidin/core-fe:dev
     container_name: frontend
     restart: unless-stopped
     expose:
@@ -29,7 +29,7 @@ services:
       - app_network
 
   backend:
-    image: core-backend:dev
+    image: muhammadmuhidin/core-be:dev
     container_name: backend
     restart: unless-stopped
     expose:
