@@ -17,8 +17,8 @@ build-all:
 
 # Build frontend saja
 fe-build:
-	docker compose build frontend --no-cache
+	docker build --no-cache -t core-frontend:dev ./frontend
 
 # Build backend saja
 be-build:
-	docker compose build backend --no-cache
+	docker build --no-cache -t core-backend:dev ./backend

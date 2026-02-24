@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "../../../lib/api.client";
 
@@ -9,10 +8,6 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchAPI("/auth/me", { method: "GET" }).catch(() => {});
-  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();

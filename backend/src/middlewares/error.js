@@ -1,11 +1,18 @@
+const logger = require("../core/logger");
+
 exports.errorHandler = (err, req, res, next) => {
-  console.error(err);
+  logger.error({
+    requestId: req.id,
+    sessionId: req.sessionID,
+    userId: req.user?.id,
+    stack: err.stack,
+  }, err.message);
 
-  const statusCode = err.statusCode || 500;
-
-  res.status(statusCode).json({
+  res.status(err.statusCode || 500).json({
     success: false,
-    message: err.message || "Internal Server Error",
+    error: {
+      code: err.code || "INTERNAL_ERROR",
+      message: err.message,
+    },
   });
-
 };

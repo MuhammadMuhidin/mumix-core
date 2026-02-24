@@ -1,49 +1,56 @@
 const authService = require("./auth.service");
+const AppError = require("../../core/app.error");
+const authEvents = require("../../observability/authEvents");
 const jwt = require("jsonwebtoken");
+
+const BASE_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "strict",
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+};
+
+const COOKIE_OPTIONS = {
+  ...BASE_COOKIE_OPTIONS,
+  maxAge: 24 * 60 * 60 * 1000
+};
 
 exports.login = async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
+
     if (result.requires2FA) {
       req.session.pending2FA = result.email;
-      req.session.save((err) => {
+
+      return req.session.save((err) => {
         if (err) return next(err);
         return res.status(200).json({
           success: true,
           requires2FA: true
         });
       });
-      return;
     }
 
-    // Set HTTP-only cookie
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false, //process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
-    });
+    res.cookie("token", result.token, COOKIE_OPTIONS);
 
-    res.status(200).json({
+    authEvents.loginSuccess({ req, user: result.user });
+
+    return res.status(200).json({
       success: true,
-      data: {
-        user: result.user
-      }
+      data: { user: result.user }
     });
   } catch (err) {
+    authEvents.loginFailed({ req, email: req.body.email });
     next(err);
   }
 };
 
 exports.me = async (req, res, next) => {
   try {
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: {
-        user: req.user
-      }
-    })
+      data: { user: req.user }
+    });
   } catch (err) {
     next(err);
   }
@@ -51,12 +58,10 @@ exports.me = async (req, res, next) => {
 
 exports.webauthnRegisterOptions = async (req, res, next) => {
   try {
-    const userId = req.user.id; // dari middleware auth
-
     const options =
-      await authService.generateWebAuthnRegisterOptions(userId);
+      await authService.generateWebAuthnRegisterOptions(req.user.id);
 
-    res.json(options);
+    return res.json(options);
   } catch (err) {
     next(err);
   }
@@ -64,12 +69,13 @@ exports.webauthnRegisterOptions = async (req, res, next) => {
 
 exports.webauthnRegisterVerify = async (req, res, next) => {
   try {
-    const userId = req.user.id;
-
     const result =
-      await authService.verifyWebAuthnRegister(userId, req.body.credential);
+      await authService.verifyWebAuthnRegister(
+        req.user.id,
+        req.body.credential
+      );
 
-    res.json(result);
+    return res.json(result);
   } catch (err) {
     next(err);
   }
@@ -80,8 +86,9 @@ exports.webauthnLoginOptions = async (req, res, next) => {
     const email = req.session.pending2FA;
 
     if (!email) {
-      return res.status(403).json({
-        success: false,
+      throw new AppError({
+        statusCode: 403,
+        code: "2FA_UNAUTHORIZED",
         message: "Unauthorized 2FA attempt"
       });
     }
@@ -89,8 +96,7 @@ exports.webauthnLoginOptions = async (req, res, next) => {
     const options =
       await authService.generateWebAuthnLoginOptions(email);
 
-    res.json(options);
-
+    return res.json(options);
   } catch (err) {
     next(err);
   }
@@ -101,8 +107,9 @@ exports.webauthnLoginVerify = async (req, res, next) => {
     const email = req.session.pending2FA;
 
     if (!email) {
-      return res.status(403).json({
-        success: false,
+      throw new AppError({
+        statusCode: 403,
+        code: "2FA_UNAUTHORIZED",
         message: "Unauthorized 2FA attempt"
       });
     }
@@ -120,58 +127,10 @@ exports.webauthnLoginVerify = async (req, res, next) => {
       maxAttempts: result.maxAttempts
     };
 
-    res.json({ success: true, requiresOTP: true });
-
+    return res.json({ success: true, requiresOTP: true });
   } catch (err) {
     next(err);
   }
-};
-
-exports.disable2FAOptions = async (req, res, next) => {
-  try {
-    const options =
-      await authService.generateDisable2FAOptions(req.user.id);
-
-    res.json(options);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.disable2FAVerify = async (req, res, next) => {
-  try {
-    const { password, credential } = req.body;
-
-    await authService.disable2FAWithReauth(
-      req.user.id,
-      password,
-      credential
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.logout = (req, res, next) => {
-  req.session.destroy(err => {
-    if (err) return next(err);
-
-    res.clearCookie("connect.sid", {
-      path: "/",
-      sameSite: "lax",
-      secure: false
-    });
-
-    res.clearCookie("token", {
-      path: "/",
-      sameSite: "lax",
-      secure: false
-    });
-
-    res.status(200).json({ success: true });
-  });
 };
 
 exports.verifyOtp = async (req, res, next) => {
@@ -179,14 +138,33 @@ exports.verifyOtp = async (req, res, next) => {
     const { otp } = req.body;
     const sessionData = req.session.pendingOTP;
 
+    if (!sessionData) {
+      throw new AppError({
+        statusCode: 403,
+        code: "OTP_SESSION_MISSING",
+        message: "Unauthorized OTP attempt"
+      });
+    }
+
+    if (sessionData.attempts >= sessionData.maxAttempts) {
+      authEvents.otpLocked({ req, email: sessionData.email });
+      throw new AppError({
+        statusCode: 403,
+        code: "OTP_ATTEMPTS_EXCEEDED",
+        message: "Maximum OTP attempts exceeded"
+      });
+    }
+
     const result =
       await authService.validateOtp(sessionData, otp);
 
     if (!result.valid) {
       sessionData.attempts += 1;
 
-      return res.status(401).json({
-        success: false,
+      authEvents.otpFailed({ req, email: sessionData.email });
+      throw new AppError({
+        statusCode: 401,
+        code: "OTP_INVALID",
         message: "Invalid OTP"
       });
     }
@@ -204,17 +182,52 @@ exports.verifyOtp = async (req, res, next) => {
     req.session.pendingOTP = null;
     req.session.pending2FA = null;
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 24 * 60 * 60 * 1000
-    });
+    res.cookie("token", token, COOKIE_OPTIONS);
 
-    res.json({ success: true });
-
+    authEvents.loginSuccess({ req, user: result.user });
+    return res.json({ success: true });
   } catch (err) {
     next(err);
   }
+};
+
+exports.disable2FAOptions = async (req, res, next) => {
+  try {
+    const options =
+      await authService.generateDisable2FAOptions(req.user.id);
+
+    return res.json(options);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.disable2FAVerify = async (req, res, next) => {
+  try {
+    const { password, credential } = req.body;
+
+    await authService.disable2FAWithReauth(
+      req.user.id,
+      password,
+      credential
+    );
+
+    return res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.logout = (req, res, next) => {
+  const user = req.user;
+  
+  req.session.destroy((err) => {
+    if (err) return next(err);
+
+    res.clearCookie("connect.sid", BASE_COOKIE_OPTIONS);
+    res.clearCookie("token", BASE_COOKIE_OPTIONS);
+
+    authEvents.logoutSuccess({ req, user });
+    return res.status(200).json({ success: true });
+  });
 };

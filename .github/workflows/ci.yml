@@ -2,14 +2,14 @@ name: Production CI-CD
 
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - main
+  push:
+    branches:
+      - main
 
 env:
   REGISTRY: docker.io
-  BACKEND_IMAGE: muhammadmuhidin/core-backend
-  FRONTEND_IMAGE: muhammadmuhidin/core-frontend
+  BACKEND_IMAGE: muhammadmuhidin/core-be
+  FRONTEND_IMAGE: muhammadmuhidin/core-fe
 
 jobs:
   build-and-deploy:
@@ -24,7 +24,16 @@ jobs:
 
       - name: Set image tag
         id: vars
-        run: echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+        run: |
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "ENV_TAG=prod" >> $GITHUB_OUTPUT
+            echo "IMAGE_TAG=prod-$SHORT_SHA" >> $GITHUB_OUTPUT
+          else
+            echo "ENV_TAG=dev" >> $GITHUB_OUTPUT
+            echo "IMAGE_TAG=dev-$SHORT_SHA" >> $GITHUB_OUTPUT
+          fi
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -36,37 +45,22 @@ jobs:
         run: |
           docker build \
             -t $BACKEND_IMAGE:${{ steps.vars.outputs.IMAGE_TAG }} \
-            -t $BACKEND_IMAGE:latest \
+            -t $BACKEND_IMAGE:${{ steps.vars.outputs.ENV_TAG }} \
             ./backend
 
       - name: Push backend image
         run: |
           docker push $BACKEND_IMAGE:${{ steps.vars.outputs.IMAGE_TAG }}
-          docker push $BACKEND_IMAGE:latest
+          docker push $BACKEND_IMAGE:${{ steps.vars.outputs.ENV_TAG }}
 
       - name: Build frontend image
         run: |
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=/api \
-            --build-arg NEXT_PRIVATE_API_URL=http://nginx/api \
             -t $FRONTEND_IMAGE:${{ steps.vars.outputs.IMAGE_TAG }} \
-            -t $FRONTEND_IMAGE:latest \
+            -t $FRONTEND_IMAGE:${{ steps.vars.outputs.ENV_TAG }} \
             ./frontend
 
       - name: Push frontend image
         run: |
           docker push $FRONTEND_IMAGE:${{ steps.vars.outputs.IMAGE_TAG }}
-          docker push $FRONTEND_IMAGE:latest
-
-#      - name: Deploy to VPS
-#        uses: appleboy/ssh-action@v1.0.3
-#        with:
-#          host: ${{ secrets.VPS_HOST }}
-#          username: ${{ secrets.VPS_USER }}
-#          key: ${{ secrets.VPS_SSH_KEY }}
-#          script: |
-#            cd /root/repo-folder
-#            export IMAGE_TAG=${{ steps.vars.outputs.IMAGE_TAG }}
-#            docker compose pull
-#            docker compose up -d --remove-orphans
-#
+          docker push $FRONTEND_IMAGE:${{ steps.vars.outputs.ENV_TAG }}

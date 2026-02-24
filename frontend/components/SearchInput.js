@@ -20,8 +20,6 @@ export default function SearchInput() {
         params.delete("search");
       }
 
-      params.set("page", "1"); // reset ke page 1 saat search
-
       router.replace(`?${params.toString()}`);
     }, 400); // debounce 400ms
 

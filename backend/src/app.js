@@ -6,12 +6,13 @@ const userRoutes = require("./modules/user/user.route");
 const authRoutes = require("./modules/auth/auth.route");
 const { errorHandler } = require("./middlewares/error");
 const { setCSRFCookie, verifyCSRF } = require("./middlewares/csrf");
+const reqestLogger = require("./middlewares/requestLogger");
 
 const app = express();
 
 app.set("trust proxy", 1);
-
 app.use(cookieParser());
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dev-secret",
@@ -19,11 +20,13 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false, // ubah true di production HTTPS
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
     },
   })
 );
+
+app.use(reqestLogger);
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 

@@ -1,4 +1,6 @@
 const crypto = require("crypto");
+const AppError = require("../core/app.error");
+const logger = require("../core/logger");
 
 const CSRF_COOKIE_NAME = "csrf_token";
 const CSRF_HEADER_NAME = "x-csrf-token";
@@ -33,15 +35,27 @@ function verifyCSRF(req, res, next) {
   const headerToken = req.headers[CSRF_HEADER_NAME];
 
   if (!cookieToken || !headerToken) {
-    return res.status(403).json({
-      success: false,
-      message: "CSRF token missing",
+    logger.warn({
+      requestId: req.id,
+      ip: req.ip,
+      path: req.originalUrl,
+    }, "Missing or invalid CSRF token");
+    throw new AppError({
+      statusCode: 403,
+      code: "MISSING_CSRF_TOKEN",
+      message: "Missing CSRF token",
     });
   }
 
   if (cookieToken !== headerToken) {
-    return res.status(403).json({
-      success: false,
+    logger.warn({
+      requestId: req.id,
+      ip: req.ip,
+      path: req.originalUrl,
+    }, "Invalid CSRF token");
+    throw new AppError({
+      statusCode: 403,
+      code: "INVALID_CSRF_TOKEN",
       message: "Invalid CSRF token",
     });
   }

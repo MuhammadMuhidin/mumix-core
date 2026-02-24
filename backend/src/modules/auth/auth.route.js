@@ -20,6 +20,6 @@ router.post("/webauthn/disable/verify", authenticate, authController.disable2FAV
 
 router.post("/otp/verify", otpLimiter, authController.verifyOtp);
 
-router.post("/logout", authController.logout);
+router.post("/logout", authenticate, authController.logout);
 
 module.exports = router;

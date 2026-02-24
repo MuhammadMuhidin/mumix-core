@@ -1,20 +1,22 @@
 const axios = require("axios");
 const AppError = require("../../core/app.error");
 
-const FONNTE_TOKEN = process.env.FONNTE_TOKEN;
-const FONNTE_BASE_URL = process.env.FONNTE_BASE_URL;
+const { FONNTE_TOKEN, FONNTE_BASE_URL } = process.env;
 
 if (!FONNTE_TOKEN || !FONNTE_BASE_URL) {
   throw new Error("FONNTE config missing in environment");
 }
 
 exports.sendOtp = async (phone, name, otp) => {
-  try {
-    if (!phone) {
-      throw new AppError("Phone number not found", 400);
-    }
+  if (!phone) {
+    throw new AppError({
+      statusCode: 400,
+      code: "PHONE_NOT_FOUND",
+      message: "Phone number not found"
+    });
+  }
 
-    const message = `
+  const message = `
 Halo ${name},
 
 Kode OTP login Anda adalah:
@@ -23,14 +25,15 @@ ${otp}
 
 Kode ini berlaku selama 3 menit.
 Jangan bagikan kode ini kepada siapa pun.
-    `.trim();
+`.trim();
 
+  try {
     const response = await axios.post(
       FONNTE_BASE_URL,
       {
         target: phone,
         message,
-        countryCode: "62", // ubah sesuai kebutuhan
+        countryCode: "62",
       },
       {
         headers: {
@@ -41,19 +44,28 @@ Jangan bagikan kode ini kepada siapa pun.
     );
 
     if (!response.data || response.data.status !== true) {
-      throw new AppError("Failed to send OTP", 500);
+      throw new AppError({
+        statusCode: 500,
+        code: "OTP_PROVIDER_REJECTED",
+        message: "Failed to send OTP"
+      });
     }
 
     return true;
 
-  } catch (error) {
-    if (error.response) {
-      throw new AppError(
-        "OTP provider error",
-        error.response.status || 500
-      );
+  } catch (err) {
+    if (err.response) {
+      throw new AppError({
+        statusCode: err.response.status || 500,
+        code: "OTP_PROVIDER_ERROR",
+        message: "OTP provider error"
+      });
     }
 
-    throw new AppError("OTP sending failed", 500);
+    throw new AppError({
+      statusCode: 500,
+      code: "OTP_SENDING_FAILED",
+      message: "OTP sending failed"
+    });
   }
 };

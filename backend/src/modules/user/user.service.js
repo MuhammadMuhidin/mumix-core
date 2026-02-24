@@ -7,7 +7,11 @@ exports.findById = async (id) => repo.findById(id);
 
 exports.create = async (data) => {
     if (await repo.findByEmail(data.email)) {
-        throw new AppError("Email already exists", 400);
+        throw new AppError({
+        statusCode: 400,
+        code: "EMAIL_EXISTS",
+        message: "Email already exists",
+      });
     }
     data.password = await bcrypt.hash(data.password, 10);
     return repo.create(data);
@@ -17,7 +21,11 @@ exports.update = async (id, data) => {
   const existingUser = await repo.findById(id);
 
   if (!existingUser) {
-    throw new AppError("User not found", 404);
+        throw new AppError({
+        statusCode: 404,
+        code: "USER_NOT_FOUND",
+        message: "User not found",
+      });
   }
 
   const updateData = { ...data };

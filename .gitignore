@@ -18,5 +18,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# .pem
-*.pem
+# ignore nginx certificate except .gitkeep
+nginx/certs/*
+!nginx/certs/.gitkeep

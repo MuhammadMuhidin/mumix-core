@@ -4,6 +4,7 @@ services:
   nginx:
     image: nginx:stable-alpine
     container_name: reverse_proxy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -17,12 +18,9 @@ services:
       - app_network
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: "/api"
-        NEXT_PRIVATE_API_URL: "http://backend:4000/api"
+    image: core-frontend:dev
     container_name: frontend
+    restart: unless-stopped
     expose:
       - "3000"
     env_file:
@@ -31,8 +29,9 @@ services:
       - app_network
 
   backend:
-    build: ./backend
+    image: core-backend:dev
     container_name: backend
+    restart: unless-stopped
     expose:
       - "4000"
     env_file:

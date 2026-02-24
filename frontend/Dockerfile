@@ -15,10 +15,8 @@ COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 
 # Build-time variable
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PRIVATE_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PRIVATE_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PRIVATE_API_URL=http://backend:4000/api
 
 RUN npm run build
 

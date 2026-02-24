@@ -11,54 +11,74 @@ const {
 const { sendOtp } = require("./otp.provider");
 const crypto = require("crypto");
 
-const OTP_TTL_MS = 3 * 60 * 1000; // 3 menit
+const OTP_TTL_MS = 3 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const RP_ID = process.env.RP_ID;
-const ORIGIN = process.env.ORIGIN;
+const { JWT_SECRET, RP_ID, ORIGIN, OTP_SECRET } = process.env;
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined");
-}
-
-if (!RP_ID || !ORIGIN) {
-  throw new Error("RP_ID or ORIGIN is not defined");
-}
+if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined");
+if (!RP_ID || !ORIGIN) throw new Error("RP_ID or ORIGIN is not defined");
+if (!OTP_SECRET) throw new Error("OTP_SECRET is not defined");
 
 const generateOtp = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
 const hashOtp = (otp) =>
-  crypto
-    .createHash("sha256")
-    .update(otp + process.env.OTP_SECRET)
-    .digest("hex");
+  crypto.createHash("sha256").update(otp + OTP_SECRET).digest("hex");
+
+const toBase64Url = (buffer) =>
+  Buffer.from(buffer)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+const base64UrlToBuffer = (base64url) => {
+  const padding = "=".repeat((4 - (base64url.length % 4)) % 4);
+  const base64 = (base64url + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  return Buffer.from(base64, "base64");
+};
 
 exports.login = async ({ email, password }) => {
   if (!email || !password) {
-    throw new AppError("Email and password are required", 400);
+    throw new AppError({
+      statusCode: 400,
+      code: "VALIDATION_ERROR",
+      message: "Email and password are required"
+    });
   }
 
   const user = await userRepo.findByEmail(email);
   if (!user) {
-    throw new AppError("Invalid email or password", 401);
+    throw new AppError({
+      statusCode: 401,
+      code: "INVALID_CREDENTIALS",
+      message: "Invalid email or password"
+    });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    throw new AppError("Invalid email or password", 401);
+    throw new AppError({
+      statusCode: 401,
+      code: "INVALID_CREDENTIALS",
+      message: "Invalid email or password"
+    });
   }
 
   if (!user.is_active) {
-    throw new AppError("Account disabled", 403);
+    throw new AppError({
+      statusCode: 403,
+      code: "ACCOUNT_DISABLED",
+      message: "Account disabled"
+    });
   }
 
   if (user.webauthn_enabled) {
-    return {
-      requires2FA: true,
-      email: user.email
-    };
+    return { requires2FA: true, email: user.email };
   }
 
   const token = jwt.sign(
@@ -68,9 +88,7 @@ exports.login = async ({ email, password }) => {
       tokenVersion: Number(user.token_version)
     },
     JWT_SECRET,
-    {
-      expiresIn: "1d"
-    }
+    { expiresIn: "1d" }
   );
 
   return {
@@ -87,7 +105,11 @@ exports.login = async ({ email, password }) => {
 exports.generateWebAuthnRegisterOptions = async (userId) => {
   const user = await userRepo.findById(userId);
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
   }
 
   const options = await generateRegistrationOptions({
@@ -96,9 +118,7 @@ exports.generateWebAuthnRegisterOptions = async (userId) => {
     userID: String(user.id),
     userName: user.email,
     attestationType: "none",
-    authenticatorSelection: {
-      userVerification: "required"
-    }
+    authenticatorSelection: { userVerification: "required" }
   });
 
   await userRepo.update(user.id, {
@@ -111,7 +131,11 @@ exports.generateWebAuthnRegisterOptions = async (userId) => {
 exports.verifyWebAuthnRegister = async (userId, credential) => {
   const user = await userRepo.findById(userId);
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
   }
 
   const verification = await verifyRegistrationResponse({
@@ -122,18 +146,15 @@ exports.verifyWebAuthnRegister = async (userId, credential) => {
   });
 
   if (!verification.verified) {
-    throw new AppError("Registration failed", 400);
+    throw new AppError({
+      statusCode: 400,
+      code: "WEBAUTHN_REGISTER_FAILED",
+      message: "Registration failed"
+    });
   }
 
   const { credentialID, credentialPublicKey, counter } =
     verification.registrationInfo;
-
-  const toBase64Url = (buffer) =>
-  Buffer.from(buffer)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
 
   await userRepo.update(user.id, {
     webauthn_credential_id: toBase64Url(credentialID),
@@ -148,20 +169,20 @@ exports.verifyWebAuthnRegister = async (userId, credential) => {
 exports.generateWebAuthnLoginOptions = async (email) => {
   const user = await userRepo.findByEmail(email);
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
   }
 
   if (!user.webauthn_enabled) {
-    throw new AppError("2FA not enabled", 400);
+    throw new AppError({
+      statusCode: 400,
+      code: "2FA_NOT_ENABLED",
+      message: "2FA not enabled"
+    });
   }
-
-  const base64UrlToBuffer = (base64url) =>
-    Buffer.from(
-      base64url
-        .replace(/-/g, "+")
-        .replace(/_/g, "/"),
-      "base64"
-    );
 
   const options = await generateAuthenticationOptions({
     rpID: RP_ID,
@@ -185,17 +206,12 @@ exports.generateWebAuthnLoginOptions = async (email) => {
 exports.verifyWebAuthnLogin = async (email, credential) => {
   const user = await userRepo.findByEmail(email);
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
   }
-
-  const base64UrlToBuffer = (base64url) => {
-    const padding = "=".repeat((4 - (base64url.length % 4)) % 4);
-    const base64 = (base64url + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-
-    return Buffer.from(base64, "base64");
-  };
 
   const verification = await verifyAuthenticationResponse({
     response: credential,
@@ -210,7 +226,11 @@ exports.verifyWebAuthnLogin = async (email, credential) => {
   });
 
   if (!verification.verified) {
-    throw new AppError("Invalid fingerprint", 401);
+    throw new AppError({
+      statusCode: 401,
+      code: "WEBAUTHN_INVALID",
+      message: "Invalid fingerprint"
+    });
   }
 
   await userRepo.update(user.id, {
@@ -233,18 +253,19 @@ exports.verifyWebAuthnLogin = async (email, credential) => {
 exports.generateDisable2FAOptions = async (userId) => {
   const user = await userRepo.findById(userId);
 
-  if (!user.webauthn_enabled) {
-    throw new AppError("2FA not enabled", 400);
+  if (!user || !user.webauthn_enabled) {
+    throw new AppError({
+      statusCode: 400,
+      code: "2FA_NOT_ENABLED",
+      message: "2FA not enabled"
+    });
   }
 
   const options = await generateAuthenticationOptions({
     rpID: RP_ID,
     allowCredentials: [
       {
-        id: Buffer.from(
-          user.webauthn_credential_id,
-          "base64url"
-        ),
+        id: base64UrlToBuffer(user.webauthn_credential_id),
         type: "public-key"
       }
     ],
@@ -258,21 +279,23 @@ exports.generateDisable2FAOptions = async (userId) => {
   return options;
 };
 
-exports.disable2FAWithReauth = async (
-  userId,
-  password,
-  credential
-) => {
+exports.disable2FAWithReauth = async (userId, password, credential) => {
   const user = await userRepo.findByIdWithPassword(userId);
-
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
   }
 
-  // 1️⃣ Verify password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    throw new AppError("Invalid password", 401);
+    throw new AppError({
+      statusCode: 401,
+      code: "INVALID_PASSWORD",
+      message: "Invalid password"
+    });
   }
 
   const verification = await verifyAuthenticationResponse({
@@ -281,20 +304,18 @@ exports.disable2FAWithReauth = async (
     expectedOrigin: ORIGIN,
     expectedRPID: RP_ID,
     authenticator: {
-      credentialID: Buffer.from(
-        user.webauthn_credential_id,
-        "base64url"
-      ),
-      credentialPublicKey: Buffer.from(
-        user.webauthn_public_key,
-        "base64url"
-      ),
+      credentialID: base64UrlToBuffer(user.webauthn_credential_id),
+      credentialPublicKey: base64UrlToBuffer(user.webauthn_public_key),
       counter: user.webauthn_counter
     }
   });
 
   if (!verification.verified) {
-    throw new AppError("Invalid fingerprint", 401);
+    throw new AppError({
+      statusCode: 401,
+      code: "WEBAUTHN_INVALID",
+      message: "Invalid fingerprint"
+    });
   }
 
   await userRepo.update(user.id, {
@@ -308,25 +329,42 @@ exports.disable2FAWithReauth = async (
 
 exports.validateOtp = async (sessionData, otpInput) => {
   if (!sessionData) {
-    throw new AppError("Unauthorized", 403);
+    throw new AppError({
+      statusCode: 403,
+      code: "OTP_SESSION_MISSING",
+      message: "Unauthorized"
+    });
   }
 
   if (Date.now() > sessionData.expiresAt) {
-    throw new AppError("OTP expired", 401);
+    throw new AppError({
+      statusCode: 401,
+      code: "OTP_EXPIRED",
+      message: "OTP expired"
+    });
   }
 
   const hash = hashOtp(otpInput);
 
   if (hash !== sessionData.otpHash) {
     if (sessionData.attempts + 1 >= sessionData.maxAttempts) {
-      throw new AppError("Too many attempts", 401);
+      throw new AppError({
+        statusCode: 401,
+        code: "OTP_TOO_MANY_ATTEMPTS",
+        message: "Too many attempts"
+      });
     }
-
     return { valid: false };
   }
 
   const user = await userRepo.findByEmail(sessionData.email);
-  if (!user) throw new AppError("User not found", 404);
+  if (!user) {
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
+  }
 
   return { valid: true, user };
 };
