@@ -1,4 +1,4 @@
-import TwoFAToggle from "../../components/TwoFAToggle";
+import TwoFAToggle from "@/components/TwoFAToggle";
 
 export default function ProfilePage() {
   return (

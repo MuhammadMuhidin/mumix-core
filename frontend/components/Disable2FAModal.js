@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { fetchAPI } from "../lib/api.client";
+import { fetchAPI } from "@/lib/api.client";
 
 export default function Disable2FAModal({ onClose, onSuccess }) {
   const [password, setPassword] = useState("");

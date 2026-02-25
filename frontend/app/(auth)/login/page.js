@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "../../../lib/api.client";
+import { fetchAPI } from "@/lib/api.client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function LoginPage() {
       });
 
       if (data.requires2FA) {
-        router.push("/auth/webauthn/login");
+        router.push("/webauthn/login");
         return;
       }
 

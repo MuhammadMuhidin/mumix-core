@@ -17,6 +17,7 @@
     "@simplewebauthn/server": "^8.0.2",
     "express-session": "^1.17.3",
     "axios": "^1.4.0",
-    "pino": "^8.15.0"
+    "pino": "^8.15.0",
+    "helmet": "^7.0.0"
   }
 }

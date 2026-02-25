@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchAPI } from "../lib/api.client";
+import { fetchAPI } from "@/lib/api.client";
 import Disable2FAModal from "./Disable2FAModal";
 
 export default function TwoFAToggle() {

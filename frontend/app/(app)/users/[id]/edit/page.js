@@ -1,8 +1,8 @@
-import DeleteButton from "../../../../components/DeleteButton";
-import { updateUser, deleteUser } from "../../../actions";
+import DeleteButton from "@/components/DeleteButton";
+import { updateUser, deleteUser } from "@/lib/actions";
 import { notFound } from "next/navigation";
-import { fetchAPIServer } from "../../../../lib/api.server";
-import { requireAdmin } from "../../../../lib/auth";
+import { fetchAPIServer } from "@/lib/api.server";
+import { requireAdmin } from "@/lib/auth";
 
 async function getUser(id) {
   return await fetchAPIServer(`/users/${id}`, {

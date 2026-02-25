@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "../lib/api.client";
+import { fetchAPI } from "@/lib/api.client";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export default function LogoutButton() {
         method: "POST",
       });
 
-      router.push("/auth/login");
+      router.push("/login");
       router.refresh();
     } catch (err) {
       console.error("Logout failed:", err);

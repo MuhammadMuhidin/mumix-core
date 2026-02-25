@@ -1,4 +1,5 @@
-import "./globals.css";
+import "@/app/globals.css";
+import Header from "@/components/Header";
 
 export const metadata = {
   title: "User Management",
@@ -8,7 +9,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html>
-      <body style={{ fontFamily: "Arial", margin: 0 }}>
+      <Header/>
+      <body style={{ fontFamily: "Arial"}}>
         {children}
       </body>
     </html>
