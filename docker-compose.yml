@@ -19,6 +19,7 @@ services:
 
   frontend:
     image: muhammadmuhidin/core-fe:${ENV_TAG}
+    pull_policy: always
     container_name: frontend
     restart: unless-stopped
     expose:
@@ -30,6 +31,7 @@ services:
 
   backend:
     image: muhammadmuhidin/core-be:${ENV_TAG}
+    pull_policy: always
     container_name: backend
     restart: unless-stopped
     expose:
