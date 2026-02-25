@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAuth } from "../lib/auth";
+import { requireAuth } from "@/lib/auth";
 
 export default async function HomePage() {
   const user = await requireAuth();

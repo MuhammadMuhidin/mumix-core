@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAPI } from "../../../../lib/api.client";
+import { fetchAPI } from "@/lib/api.client";
 
 export default function WebAuthnLoginPage() {
   const router = useRouter();
@@ -103,7 +103,7 @@ export default function WebAuthnLoginPage() {
         );
 
         if (res.requiresOTP) {
-          router.push("/auth/otp");
+          router.push("/otp");
           return;
         }
         

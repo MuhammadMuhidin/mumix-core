@@ -1,9 +1,8 @@
-import UserList from "../../components/UserList";
-import Pagination from "../../components/Pagination";
-import SearchInput from "../../components/SearchInput";  
-import LogoutButton from "../../components/LogoutButton";
-import { fetchAPIServer } from "../../lib/api.server";
-import { requireAdmin } from "../../lib/auth";
+import UserList from "@/components/UserList";
+import Pagination from "@/components/Pagination";
+import SearchInput from "@/components/SearchInput";  
+import { fetchAPIServer } from "@/lib/api.server";
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 
 async function getUsers({ page, limit, search, sortBy, sortOrder }) {
@@ -82,7 +81,6 @@ export default async function Page({ searchParams: searchParamsPromise }) {
               Add New User
             </Link>
           </div>
-          <LogoutButton />
         </div>
 
         <div

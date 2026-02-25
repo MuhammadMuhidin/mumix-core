@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchAPI } from "../lib/api.client";
+import { fetchAPI } from "@/lib/api.client";
 import Disable2FAModal from "./Disable2FAModal";
 
 export default function TwoFAToggle() {
@@ -48,7 +48,7 @@ export default function TwoFAToggle() {
       >
         <div>
           <h3 style={{ margin: 0 }}>
-            Two-Factor Authentication and On Time Password (OTP)
+            Two-Factor Authentication + On Time Password (OTP)
           </h3>
 
           <p
@@ -59,7 +59,7 @@ export default function TwoFAToggle() {
               maxWidth: 420,
             }}
           >
-            Add an extra layer of security to your account using fingerprint authentication and On Time Password (OTP).
+            Add an extra layer of security to your account using fingerprint authentication + On Time Password (OTP).
           </p>
 
           <div style={{ marginTop: 12 }}>

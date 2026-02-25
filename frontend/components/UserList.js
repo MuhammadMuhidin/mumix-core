@@ -1,6 +1,6 @@
 import DeleteButton from "./DeleteButton";
 import Link from "next/link";
-import { deleteUser } from "../app/actions";
+import { deleteUser } from "@/lib/actions";
 
 export default function UserList({ users }) {
   if (!users?.length) {

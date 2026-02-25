@@ -1,6 +1,6 @@
-import UserForm from "../../../components/UserForm";
-import { createUser } from "../../actions";
-import { fetchAPIServer } from "../../../lib/api.server";
+import UserForm from "@/components/UserForm";
+import { createUser } from "@/lib/actions";
+import { fetchAPIServer } from "@/lib/api.server";
 import { redirect } from "next/navigation";
 
 async function getCurrentUser() {
