@@ -20,7 +20,7 @@ export default function Header() {
         background: "#fff",
       }}
     >
-      <Link href="/" style={{ fontWeight: 600, color: "black", textDecoration: "none" }}>
+      <Link href="/" style={{ fontWeight: 800, color: "black", textDecoration: "none" }}>
         Mumix
       </Link>
 
