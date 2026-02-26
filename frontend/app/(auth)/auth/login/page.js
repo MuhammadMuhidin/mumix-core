@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { fetchAPI } from "@/lib/api.client";
 
 export default function LoginPage() {
+  useEffect(() => {
+    fetchAPI("/auth/me", { method: "GET" }).catch(() => {});
+  }, []);
+
   const router = useRouter();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +29,7 @@ export default function LoginPage() {
       });
 
       if (data.requires2FA) {
-        router.push("/webauthn/login");
+        router.push("/auth/webauthn/login");
         return;
       }
 

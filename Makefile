@@ -10,11 +10,11 @@ down:
 
 # Build fe local image
 build-local-fe:
-	docker build -t core-fe:dev ./frontend
+	docker build -t local-core-fe:dev ./frontend
 
 # Build be local image
 build-local-be:
-	docker build -t core-be:dev ./backend
+	docker build -t local-core-be:dev ./backend
 
 # Help
 help:

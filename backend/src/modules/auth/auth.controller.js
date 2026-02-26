@@ -2,6 +2,7 @@ const authService = require("./auth.service");
 const AppError = require("../../core/app.error");
 const authEvents = require("../../observability/authEvents");
 const jwt = require("jsonwebtoken");
+const userRepo = require("../user/user.repository");
 
 const BASE_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -56,6 +57,10 @@ exports.me = async (req, res, next) => {
   }
 };
 
+//
+// ENABLE 2FA FLOW
+//
+
 exports.webauthnRegisterOptions = async (req, res, next) => {
   try {
     const options =
@@ -69,17 +74,39 @@ exports.webauthnRegisterOptions = async (req, res, next) => {
 
 exports.webauthnRegisterVerify = async (req, res, next) => {
   try {
+    // 1️⃣ Verify fingerprint
     const result =
       await authService.verifyWebAuthnRegister(
         req.user.id,
         req.body.credential
       );
 
-    return res.json(result);
+    // 2️⃣ Simpan OTP ke session (BELUM enable)
+    req.session.pendingEnable2FA = {
+      email: result.email,
+      otpHash: result.otpHash,
+      expiresAt: result.expiresAt,
+      attempts: 0,
+      maxAttempts: result.maxAttempts
+    };
+
+    return req.session.save((err) => {
+      if (err) return next(err);
+
+      return res.json({
+        success: true,
+        requiresOTP: true
+      });
+    });
+
   } catch (err) {
     next(err);
   }
 };
+
+//
+// LOGIN 2FA FLOW
+//
 
 exports.webauthnLoginOptions = async (req, res, next) => {
   try {
@@ -133,9 +160,54 @@ exports.webauthnLoginVerify = async (req, res, next) => {
   }
 };
 
+//
+// VERIFY OTP (HANDLE ENABLE + LOGIN)
+//
+
 exports.verifyOtp = async (req, res, next) => {
   try {
     const { otp } = req.body;
+
+    //
+    // ENABLE 2FA OTP
+    //
+    if (req.session.pendingEnable2FA) {
+      const sessionData = req.session.pendingEnable2FA;
+
+      if (sessionData.attempts >= sessionData.maxAttempts) {
+        throw new AppError({
+          statusCode: 403,
+          code: "OTP_ATTEMPTS_EXCEEDED",
+          message: "Maximum OTP attempts exceeded"
+        });
+      }
+
+      const result =
+        await authService.validateOtp(sessionData, otp);
+
+      if (!result.valid) {
+        sessionData.attempts += 1;
+
+        throw new AppError({
+          statusCode: 401,
+          code: "OTP_INVALID",
+          message: "Invalid OTP"
+        });
+      }
+
+      // ✅ OTP valid → AKTIFKAN 2FA SEKARANG
+      await userRepo.update(result.user.id, {
+        webauthn_enabled: true
+      });
+
+      req.session.pendingEnable2FA = null;
+
+      return res.json({ success: true, enable2FA: true });
+    }
+
+    //
+    // LOGIN 2FA OTP
+    //
     const sessionData = req.session.pendingOTP;
 
     if (!sessionData) {
@@ -226,6 +298,7 @@ exports.logout = (req, res, next) => {
 
     res.clearCookie("connect.sid", BASE_COOKIE_OPTIONS);
     res.clearCookie("token", BASE_COOKIE_OPTIONS);
+    res.clearCookie("csrf_token", BASE_COOKIE_OPTIONS);
 
     authEvents.logoutSuccess({ req, user });
     return res.status(200).json({ success: true });

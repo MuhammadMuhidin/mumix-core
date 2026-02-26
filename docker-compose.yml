@@ -18,8 +18,9 @@ services:
       - app_network
 
   frontend:
-    image: muhammadmuhidin/core-fe:${ENV_TAG}
-    pull_policy: always
+    #image: local-core-fe:${ENV_TAG} # local image
+    image: muhammadmuhidin/core-fe:${ENV_TAG} # dockerhub image
+    pull_policy: always # dockerhub image
     container_name: frontend
     restart: unless-stopped
     expose:
@@ -30,8 +31,9 @@ services:
       - app_network
 
   backend:
-    image: muhammadmuhidin/core-be:${ENV_TAG}
-    pull_policy: always
+    #image: local-core-be:${ENV_TAG} # local image
+    image: muhammadmuhidin/core-be:${ENV_TAG} # dockerhub image
+    pull_policy: always # dockerhub image
     container_name: backend
     restart: unless-stopped
     expose:

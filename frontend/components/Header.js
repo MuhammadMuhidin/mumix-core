@@ -20,9 +20,17 @@ export default function Header() {
         background: "#fff",
       }}
     >
-      <Link href="/" style={{ fontWeight: 800, color: "black", textDecoration: "none" }}>
-        Mumix
-      </Link>
+    <Link
+      href="/"
+      style={{
+        fontWeight: 800,
+        fontSize: "28px",
+        color: "black",
+        textDecoration: "none",
+      }}
+    >
+      Mumix
+    </Link>
 
       {showLogout && <LogoutButton />}
     </header>

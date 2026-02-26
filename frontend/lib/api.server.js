@@ -20,16 +20,23 @@ export async function fetchAPIServer(path, options = {}) {
     cache: "no-store",
   });
 
+  const data = await res.json();
   const contentType = res.headers.get("content-type") || "";
 
   if (!contentType.includes("application/json")) {
-    return null;
+    throw new Error("Response is not valid JSON.");
   }
 
-  const data = await res.json();
+  if (res.status === 401) {
+    throw new Error("Unauthorized");
+  }
+
+  if (res.status === 403) {
+    throw new Error(data.message || "Forbidden");
+  }
 
   if (!res.ok) {
-    return null;
+    throw new Error(data.message || "Something went wrong");
   }
 
   return data;

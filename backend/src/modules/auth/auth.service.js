@@ -156,14 +156,26 @@ exports.verifyWebAuthnRegister = async (userId, credential) => {
   const { credentialID, credentialPublicKey, counter } =
     verification.registrationInfo;
 
+  // simpan credential dulu (belum aktif)
   await userRepo.update(user.id, {
     webauthn_credential_id: toBase64Url(credentialID),
     webauthn_public_key: toBase64Url(credentialPublicKey),
     webauthn_counter: counter,
-    webauthn_enabled: true
+    webauthn_enabled: false
   });
 
-  return { success: true };
+  // kirim OTP
+  const otp = generateOtp();
+  const otpHash = hashOtp(otp);
+
+  await sendOtp(user.phone, user.name, otp);
+
+  return {
+    email: user.email,
+    otpHash,
+    expiresAt: Date.now() + OTP_TTL_MS,
+    maxAttempts: OTP_MAX_ATTEMPTS
+  };
 };
 
 exports.generateWebAuthnLoginOptions = async (email) => {
@@ -367,4 +379,27 @@ exports.validateOtp = async (sessionData, otpInput) => {
   }
 
   return { valid: true, user };
+};
+
+exports.startEnable2FA = async (userId) => {
+  const user = await userRepo.findById(userId);
+  if (!user) {
+    throw new AppError({
+      statusCode: 404,
+      code: "USER_NOT_FOUND",
+      message: "User not found"
+    });
+  }
+
+  const otp = generateOtp();
+  const otpHash = hashOtp(otp);
+
+  await sendOtp(user.phone, user.name, otp);
+
+  return {
+    email: user.email,
+    otpHash,
+    expiresAt: Date.now() + OTP_TTL_MS,
+    maxAttempts: OTP_MAX_ATTEMPTS
+  };
 };
