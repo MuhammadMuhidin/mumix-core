@@ -103,7 +103,7 @@ export default function WebAuthnLoginPage() {
         );
 
         if (res.requiresOTP) {
-          router.push("/otp");
+          router.push("/auth/otp");
           return;
         }
         

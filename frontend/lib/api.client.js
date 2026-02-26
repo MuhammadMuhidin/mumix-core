@@ -1,3 +1,5 @@
+import { redirect } from "next/dist/server/api-utils";
+
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 if (!API) {
@@ -15,6 +17,7 @@ function getCookie(name) {
 }
 
 export async function fetchAPI(path, options = {}) {
+  const token = getCookie("token");
   const csrfToken = getCookie("csrf_token");
 
   const headers = {
@@ -32,17 +35,16 @@ export async function fetchAPI(path, options = {}) {
     credentials: "include", // browser only
   });
 
+  const data = await res.json();
   const contentType = res.headers.get("content-type") || "";
-
-  if (res.status === 401) {
-    throw new Error("Unauthorized");
-  }
 
   if (!contentType.includes("application/json")) {
     throw new Error("Response is not valid JSON.");
   }
 
-  const data = await res.json();
+  if (res.status === 401) {
+    throw new Error("Unauthorized");
+  }
 
   if (res.status === 403) {
     throw new Error(data.message || "Forbidden");

@@ -81,7 +81,7 @@ export default function WebAuthnPage() {
       };
 
       // 4️⃣ Verify ke backend (CSRF otomatis)
-      await fetchAPI(
+      const res = await fetchAPI(
         "/auth/webauthn/register/verify",
         {
           method: "POST",
@@ -90,6 +90,11 @@ export default function WebAuthnPage() {
           }),
         }
       );
+      
+      if (res.requiresOTP) {
+         router.push("/auth/otp");
+         return;
+      }
 
       setMessage("Success: Fingerprint berhasil diaktifkan.");
       router.push("/profile");
