@@ -81,15 +81,7 @@ exports.login = async ({ email, password }) => {
     return { requires2FA: true, email: user.email };
   }
 
-  const token = jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-      tokenVersion: Number(user.token_version)
-    },
-    JWT_SECRET,
-    { expiresIn: "1d" }
-  );
+  const token = exports.generateAuthToken(user);
 
   return {
     token,
@@ -402,4 +394,22 @@ exports.startEnable2FA = async (userId) => {
     expiresAt: Date.now() + OTP_TTL_MS,
     maxAttempts: OTP_MAX_ATTEMPTS
   };
+};
+
+exports.enable2FAAfterOtp = async (userId) => {
+  await userRepo.update(userId, {
+    webauthn_enabled: true
+  });
+};
+
+exports.generateAuthToken = (user) => {
+  return jwt.sign(
+    {
+      id: user.id,
+      role: user.role,
+      tokenVersion: Number(user.token_version)
+    },
+    JWT_SECRET,
+    { expiresIn: "1d" }
+  );
 };

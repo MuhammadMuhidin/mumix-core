@@ -1,8 +1,6 @@
 const authService = require("./auth.service");
 const AppError = require("../../core/app.error");
 const authEvents = require("../../observability/authEvents");
-const jwt = require("jsonwebtoken");
-const userRepo = require("../user/user.repository");
 
 const BASE_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -16,6 +14,24 @@ const COOKIE_OPTIONS = {
   maxAge: 24 * 60 * 60 * 1000
 };
 
+// --------------------
+// Helpers
+// --------------------
+
+function setOtpSession(session, key, data) {
+  session[key] = {
+    email: data.email,
+    otpHash: data.otpHash,
+    expiresAt: data.expiresAt,
+    attempts: 0,
+    maxAttempts: data.maxAttempts
+  };
+}
+
+// --------------------
+// AUTH
+// --------------------
+
 exports.login = async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
@@ -25,21 +41,18 @@ exports.login = async (req, res, next) => {
 
       return req.session.save((err) => {
         if (err) return next(err);
-        return res.status(200).json({
-          success: true,
-          requires2FA: true
-        });
+        return res.json({ success: true, requires2FA: true });
       });
     }
 
     res.cookie("token", result.token, COOKIE_OPTIONS);
-
     authEvents.loginSuccess({ req, user: result.user });
 
-    return res.status(200).json({
+    return res.json({
       success: true,
       data: { user: result.user }
     });
+
   } catch (err) {
     authEvents.loginFailed({ req, email: req.body.email });
     next(err);
@@ -48,7 +61,7 @@ exports.login = async (req, res, next) => {
 
 exports.me = async (req, res, next) => {
   try {
-    return res.status(200).json({
+    return res.json({
       success: true,
       data: { user: req.user }
     });
@@ -57,9 +70,9 @@ exports.me = async (req, res, next) => {
   }
 };
 
-//
-// ENABLE 2FA FLOW
-//
+// --------------------
+// ENABLE 2FA
+// --------------------
 
 exports.webauthnRegisterOptions = async (req, res, next) => {
   try {
@@ -74,29 +87,17 @@ exports.webauthnRegisterOptions = async (req, res, next) => {
 
 exports.webauthnRegisterVerify = async (req, res, next) => {
   try {
-    // 1️⃣ Verify fingerprint
     const result =
       await authService.verifyWebAuthnRegister(
         req.user.id,
         req.body.credential
       );
 
-    // 2️⃣ Simpan OTP ke session (BELUM enable)
-    req.session.pendingEnable2FA = {
-      email: result.email,
-      otpHash: result.otpHash,
-      expiresAt: result.expiresAt,
-      attempts: 0,
-      maxAttempts: result.maxAttempts
-    };
+    setOtpSession(req.session, "pendingEnable2FA", result);
 
     return req.session.save((err) => {
       if (err) return next(err);
-
-      return res.json({
-        success: true,
-        requiresOTP: true
-      });
+      return res.json({ success: true, requiresOTP: true });
     });
 
   } catch (err) {
@@ -104,9 +105,9 @@ exports.webauthnRegisterVerify = async (req, res, next) => {
   }
 };
 
-//
-// LOGIN 2FA FLOW
-//
+// --------------------
+// LOGIN 2FA
+// --------------------
 
 exports.webauthnLoginOptions = async (req, res, next) => {
   try {
@@ -124,6 +125,7 @@ exports.webauthnLoginOptions = async (req, res, next) => {
       await authService.generateWebAuthnLoginOptions(email);
 
     return res.json(options);
+
   } catch (err) {
     next(err);
   }
@@ -141,36 +143,30 @@ exports.webauthnLoginVerify = async (req, res, next) => {
       });
     }
 
-    const { credential } = req.body;
-
     const result =
-      await authService.verifyWebAuthnLogin(email, credential);
+      await authService.verifyWebAuthnLogin(
+        email,
+        req.body.credential
+      );
 
-    req.session.pendingOTP = {
-      email: result.email,
-      otpHash: result.otpHash,
-      expiresAt: result.expiresAt,
-      attempts: 0,
-      maxAttempts: result.maxAttempts
-    };
+    setOtpSession(req.session, "pendingOTP", result);
 
     return res.json({ success: true, requiresOTP: true });
+
   } catch (err) {
     next(err);
   }
 };
 
-//
-// VERIFY OTP (HANDLE ENABLE + LOGIN)
-//
+// --------------------
+// VERIFY OTP
+// --------------------
 
 exports.verifyOtp = async (req, res, next) => {
   try {
     const { otp } = req.body;
 
-    //
-    // ENABLE 2FA OTP
-    //
+    // ENABLE FLOW
     if (req.session.pendingEnable2FA) {
       const sessionData = req.session.pendingEnable2FA;
 
@@ -195,19 +191,14 @@ exports.verifyOtp = async (req, res, next) => {
         });
       }
 
-      // ✅ OTP valid → AKTIFKAN 2FA SEKARANG
-      await userRepo.update(result.user.id, {
-        webauthn_enabled: true
-      });
+      await authService.enable2FAAfterOtp(result.user.id);
 
       req.session.pendingEnable2FA = null;
 
       return res.json({ success: true, enable2FA: true });
     }
 
-    //
-    // LOGIN 2FA OTP
-    //
+    // LOGIN FLOW
     const sessionData = req.session.pendingOTP;
 
     if (!sessionData) {
@@ -220,6 +211,7 @@ exports.verifyOtp = async (req, res, next) => {
 
     if (sessionData.attempts >= sessionData.maxAttempts) {
       authEvents.otpLocked({ req, email: sessionData.email });
+
       throw new AppError({
         statusCode: 403,
         code: "OTP_ATTEMPTS_EXCEEDED",
@@ -234,6 +226,7 @@ exports.verifyOtp = async (req, res, next) => {
       sessionData.attempts += 1;
 
       authEvents.otpFailed({ req, email: sessionData.email });
+
       throw new AppError({
         statusCode: 401,
         code: "OTP_INVALID",
@@ -241,15 +234,7 @@ exports.verifyOtp = async (req, res, next) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: result.user.id,
-        role: result.user.role,
-        tokenVersion: Number(result.user.token_version)
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    const token = authService.generateAuthToken(result.user);
 
     req.session.pendingOTP = null;
     req.session.pending2FA = null;
@@ -257,7 +242,9 @@ exports.verifyOtp = async (req, res, next) => {
     res.cookie("token", token, COOKIE_OPTIONS);
 
     authEvents.loginSuccess({ req, user: result.user });
+
     return res.json({ success: true });
+
   } catch (err) {
     next(err);
   }
@@ -276,12 +263,10 @@ exports.disable2FAOptions = async (req, res, next) => {
 
 exports.disable2FAVerify = async (req, res, next) => {
   try {
-    const { password, credential } = req.body;
-
     await authService.disable2FAWithReauth(
       req.user.id,
-      password,
-      credential
+      req.body.password,
+      req.body.credential
     );
 
     return res.json({ success: true });
@@ -292,7 +277,7 @@ exports.disable2FAVerify = async (req, res, next) => {
 
 exports.logout = (req, res, next) => {
   const user = req.user;
-  
+
   req.session.destroy((err) => {
     if (err) return next(err);
 
@@ -301,6 +286,7 @@ exports.logout = (req, res, next) => {
     res.clearCookie("csrf_token", BASE_COOKIE_OPTIONS);
 
     authEvents.logoutSuccess({ req, user });
-    return res.status(200).json({ success: true });
+
+    return res.json({ success: true });
   });
 };
